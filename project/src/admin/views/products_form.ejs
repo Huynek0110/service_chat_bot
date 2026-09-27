@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm' %> — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1><%= isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm' %></h1>
+<% if (errors && errors.length) { %>
+<div class="alert-error"><ul><% errors.forEach(function(e) { %><li><%= e %></li><% }); %></ul></div>
+<% } %>
+<form method="post" action="<%= action %>" enctype="multipart/form-data">
+  <div class="form-group">
+    <label for="sku">SKU</label>
+    <input type="text" id="sku" class="form-control" name="sku" value="<%= product.sku %>">
+  </div>
+
+  <div class="form-group">
+    <label for="name">Tên sản phẩm *</label>
+    <input type="text" id="name" class="form-control" name="name" required value="<%= product.name %>">
+  </div>
+
+  <div class="form-group">
+    <label for="description">Mô tả</label>
+    <textarea id="description" class="form-control" name="description"><%= product.description %></textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="price">Giá (>= 0, để trống = chưa có giá)</label>
+    <input type="number" id="price" class="form-control" name="price" min="0" step="0.01" value="<%= product.price %>">
+  </div>
+
+  <div class="form-group">
+    <label for="stock_quantity">Tồn kho (số nguyên >= 0)</label>
+    <input type="number" id="stock_quantity" class="form-control" name="stock_quantity" min="0" step="1" value="<%= product.stock_quantity %>">
+  </div>
+
+  <div class="form-group">
+    <label for="category">Danh mục</label>
+    <input type="text" id="category" class="form-control" name="category" value="<%= product.category %>">
+  </div>
+
+  <div class="form-group">
+    <label for="image_url">URL hình ảnh</label>
+    <input type="text" id="image_url" class="form-control" name="image_url" value="<%= product.image_url %>">
+  </div>
+
+  <div class="form-group">
+    <label><input type="checkbox" name="is_active" value="1" <% if (product.is_active) { %>checked<% } %>> Đang bán (is_active)</label>
+  </div>
+
+  <div class="form-group">
+    <label for="acc_file">File acc (.txt trong thư viện)</label>
+    <select id="acc_file" class="form-control" name="acc_file">
+      <option value="">— không bán acc —</option>
+      <% (typeof accFiles !== 'undefined' ? accFiles : []).forEach(function(f) { %>
+        <option value="<%= f.file %>" <% if (product.acc_file === f.file) { %>selected<% } %>><%= f.file %> (<%= f.lines %> acc)</option>
+      <% }); %>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="qr_image">QR riêng của sản phẩm (PNG/JPG, tối đa 2MB — để trống = giữ nguyên)</label>
+    <input type="file" id="qr_image" class="form-control" name="qr_image" accept=".png,.jpg,.jpeg">
+    <% if (typeof qrPreview !== 'undefined' && qrPreview) { %>
+      <p><img src="/admin/uploads/<%= qrPreview %>" alt="QR sản phẩm" style="max-width:220px;border:1px solid #ddd"></p>
+    <% } %>
+  </div>
+
+  <p><button type="submit" class="btn btn-primary"><%= isEdit ? 'Lưu thay đổi' : 'Tạo sản phẩm' %></button>
+  <a class="btn" href="/admin/products">Hủy</a></p>
+</form>
+</main>
+</body>
+</html>

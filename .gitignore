@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# Root .gitignore for service_chat_bot
+#
+# The app itself lives in project/ and has its own .gitignore. This file is the
+# repo-level safety net: it blocks anything that must never leave the machine,
+# regardless of which directory it was created in.
+# ---------------------------------------------------------------------------
+
+# Agent / editor local state
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# SECRETS — nothing below may ever be committed
+# ---------------------------------------------------------------------------
+
+# Real environment file. Only .env.example is tracked.
+project/.env
+.env
+!.env.example
+
+# Auto-generated session signing key (signs admin login cookies)
+project/data/session-secret.key
+*.key
+
+# Account stock files (real customer accounts)
+project/products/*.txt
+
+# ---------------------------------------------------------------------------
+# Runtime state
+# ---------------------------------------------------------------------------
+
+# SQLite database (schema.sql is tracked, the data is not)
+project/data/*.db
+project/data/*.db-wal
+project/data/*.db-shm
+project/data/uploads/
+
+# Backups
+project/backup/
+
+# Logs
+logs/
+*.log
+
+# Stray temp artifacts
+*.tmp
+*.temp
+project/tmp_*.json
+project/tmp_*.txt
+
+# Empty scratch folder that shipped in the working copy
+project/New folder/
+
+# Stray 10-byte artifact from an earlier tool run
+project/3
+

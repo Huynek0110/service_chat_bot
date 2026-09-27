@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sửa prompt — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Sửa prompt: <%= filename %></h1>
+<% if (saved) { %><div class="alert-ok">Đã lưu thành công.</div><% } %>
+<% if (error) { %><div class="alert-error"><%= error %></div><% } %>
+<form method="post" action="/admin/prompts/<%= encodeURIComponent(filename) %>">
+  <div class="form-group">
+    <label for="content">Nội dung (Markdown)</label>
+    <textarea id="content" class="form-control" name="content" style="min-height:300px"><%= content %></textarea>
+  </div>
+  <p><button type="submit" class="btn btn-primary">Lưu</button> <a class="btn" href="/admin/prompts">Về danh sách</a></p>
+</form>
+</main>
+</body>
+</html>

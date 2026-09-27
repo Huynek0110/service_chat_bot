@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sản phẩm — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Sản phẩm</h1>
+<% if (typeof index_error !== 'undefined' && index_error) { %>
+<div class="alert-warn">Đã lưu vào database nhưng index vector (RAG) thất bại. Dữ liệu vẫn an toàn; hãy thử sửa + lưu lại để re-index.</div>
+<% } %>
+<form method="get" action="/admin/products">
+  <input type="text" name="q" class="form-control" placeholder="Tìm theo tên, SKU, danh mục..." value="<%= q %>">
+  <button type="submit" class="btn btn-primary">Tìm</button>
+  <% if (q) { %><a class="btn btn-small" href="/admin/products">Xóa lọc</a><% } %>
+</form>
+<p>
+  <a class="btn btn-primary" href="/admin/products/new">+ Thêm sản phẩm</a>
+  <a class="btn" href="/admin/products/export">Export CSV</a>
+  <a class="btn" href="/admin/products/import">Import CSV</a>
+</p>
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr><th>ID</th><th>SKU</th><th>Tên</th><th>Giá</th><th>Tồn kho</th><th>Danh mục</th><th>Active</th><th>Cập nhật</th><th>Thao tác</th></tr>
+  </thead>
+  <tbody>
+  <% if (products.length === 0) { %>
+    <tr><td colspan="9" class="muted">Chưa có sản phẩm.</td></tr>
+  <% } %>
+  <% products.forEach(function(p) { %>
+    <tr>
+      <td><%= p.id %></td>
+      <td><%= p.sku %></td>
+      <td><%= p.name %></td>
+      <td><%= p.price %></td>
+      <td><%= p.stock_quantity %></td>
+      <td><%= p.category %></td>
+      <td><span class="badge <%= p.is_active ? 'badge-green' : 'badge-gray' %>"><%= p.is_active ? 'Có' : 'Không' %></span></td>
+      <td><%= p.updated_at %></td>
+      <td>
+        <a class="btn btn-small" href="/admin/products/<%= p.id %>/edit">Sửa</a>
+        <form method="post" action="/admin/products/<%= p.id %>/delete" style="display:inline" onsubmit="return confirm('Xóa sản phẩm này?')">
+          <button type="submit" class="btn btn-small btn-danger">Xóa</button>
+        </form>
+      </td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,964 @@
+<!-- Shared admin fragment: the design system AND the app shell.
+     There is no public/ dir, no bundler and no build step, so this single inline
+     <style> plus the <nav> below IS the whole admin UI. All 17 views include it
+     right before their own <main>; the sidebar is pure CSS (fixed nav + body
+     padding) so no view body has to change. -->
+<style>
+  /* ============================================================== tokens === */
+  :root {
+    /* --- Legacy names: kept verbatim because views and agent.ejs use them. --- */
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --text: #0f172a;
+    --muted: #5f6e85;
+    --nav-bg: #0f172a;
+    --nav-text: #cbd5e1;
+    --nav-text-strong: #f8fafc;
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --danger: #dc2626;
+    --danger-dark: #b91c1c;
+    --green-bg: #dcfce7;
+    --green-text: #166534;
+    --yellow-bg: #fef3c7;
+    --yellow-text: #854d0e;
+    --red-bg: #fee2e2;
+    --red-text: #991b1b;
+    --gray-bg: #e2e8f0;
+    --gray-text: #475569;
+    --radius: 12px;
+
+    /* --- Surface ramp --- */
+    --surface-2: #f4f7fb;
+    --surface-3: #e5eaf3;
+    --surface-inset: #f1f5f9;
+    --overlay: rgba(15, 23, 42, 0.5);
+
+    /* --- Text ramp ---
+       Each step clears 4.5:1 against both --bg and --surface, so the whole ramp
+       (13px .muted included) is safe for real text, not just decoration. */
+    --text-strong: #020617;
+    --text-soft: #334155;
+    --text-faint: #6b7a91;
+    /* Ink for inline-painted light blocks (see the orders_list shim further down). */
+    --ink-on-light: #0f172a;
+
+    /* --- Borders + focus ---
+       --border is the hairline, --border-strong decorates buttons and panels, and
+       --control-border is the only one with to clear 3:1 against the field fill
+       (WCAG 1.4.11) because it is the boundary the user has to see. */
+    --border: #e4e8f0;
+    --border-strong: #cbd5e1;
+    --control-border: #7d8ca3;
+    --ring: rgba(79, 70, 229, 0.28);
+    --ring-shadow: 0 0 0 3px var(--ring);
+
+    /* --- Brand --- */
+    --primary-soft: #eef2ff;
+    --primary-text: #3730a3;
+    --accent: #8b5cf6;
+    --brand-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%);
+    --grad-green: linear-gradient(90deg, #34d399, #059669);
+    --grad-amber: linear-gradient(90deg, #fbbf24, #d97706);
+    --grad-rose: linear-gradient(90deg, #fb7185, #e11d48);
+    --grad-slate: linear-gradient(90deg, #94a3b8, #64748b);
+
+    /* --- Status surfaces: soft fills for the left-accent-bar alerts --- */
+    --ok-bg: #ecfdf5;
+    --ok-text: #065f46;
+    --ok-border: #a7f3d0;
+    --ok-accent: #10b981;
+    --warn-bg: #fffbeb;
+    --warn-text: #92400e;
+    --warn-border: #fde68a;
+    --warn-accent: #f59e0b;
+    --err-bg: #fef2f2;
+    --err-text: #991b1b;
+    --err-border: #fecaca;
+    --danger-soft: #fee2e2;
+
+    /* Highlighted "needs attention" table row (orders_list paints it inline). */
+    --row-flag-bg: #fef9c3;
+    --row-flag-text: #713f12;
+
+    /* --- Elevation --- */
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 24px -12px rgba(15, 23, 42, 0.16);
+    --shadow-lg: 0 2px 4px rgba(15, 23, 42, 0.05), 0 20px 44px -14px rgba(15, 23, 42, 0.24);
+
+    /* --- Radii --- */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+    --radius-pill: 999px;
+
+    /* --- Type --- */
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+    /* --- Motion --- */
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 90ms var(--ease);
+    --transition: 160ms var(--ease);
+
+    /* --- Shell --- */
+    --sidebar-w: 258px;
+    --topbar-h: 60px;
+
+    /* --- Chat bubbles, shared with agent.ejs --- */
+    --bubble-user-bg: #e0e7ff;
+    --bubble-user-text: #1e1b4b;
+    --bubble-ai-bg: #f1f5f9;
+    --bubble-ai-text: #0f172a;
+  }
+
+  /* Dark mode. The token block is duplicated on purpose: a custom-property block
+     cannot be shared between a media query and an attribute selector without a
+     preprocessor, and the two selectors must stay separate so the manual toggle can
+     override the OS preference in both directions. Only colour/shadow tokens are
+     repeated - radii, fonts, motion and shell sizes are theme-independent. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b1020;
+      --surface: #131a2c;
+      --surface-2: #18223a;
+      --surface-3: #263350;
+      --surface-inset: #1b2438;
+      --overlay: rgba(3, 7, 18, 0.62);
+      --text: #e6ecf7;
+      --text-strong: #f8fafc;
+      --text-soft: #c3cddf;
+      --muted: #93a1b8;
+      --text-faint: #6b7a93;
+      --ink-on-light: #0f172a;
+      --border: #26324a;
+      --border-strong: #34415c;
+      --control-border: #5c6a90;
+      --nav-bg: #0d1322;
+      --nav-text: #a9b6cb;
+      --nav-text-strong: #eef2ff;
+      --primary: #818cf8;
+      --primary-dark: #6366f1;
+      --primary-soft: #1e2547;
+      --primary-text: #c7d2fe;
+      --accent: #a78bfa;
+      --ring: rgba(129, 140, 248, 0.40);
+      --danger: #f87171;
+      --danger-dark: #ef4444;
+      --danger-soft: #45191c;
+      --green-bg: #10281d;
+      --green-text: #86efac;
+      --yellow-bg: #2a2109;
+      --yellow-text: #fde68a;
+      --red-bg: #3a1416;
+      --red-text: #fca5a5;
+      --gray-bg: #24304a;
+      --gray-text: #b8c4d6;
+      --ok-bg: #0d2a20;
+      --ok-text: #6ee7b7;
+      --ok-border: #14532d;
+      --ok-accent: #10b981;
+      --warn-bg: #2b2108;
+      --warn-text: #fcd34d;
+      --warn-border: #5b4410;
+      --warn-accent: #f59e0b;
+      --err-bg: #35151a;
+      --err-text: #fca5a5;
+      --err-border: #6b2027;
+      --row-flag-bg: #33280a;
+      --row-flag-text: #fde68a;
+      --grad-green: linear-gradient(90deg, #10b981, #34d399);
+      --grad-amber: linear-gradient(90deg, #f59e0b, #fbbf24);
+      --grad-rose: linear-gradient(90deg, #f43f5e, #fb7185);
+      --grad-slate: linear-gradient(90deg, #64748b, #94a3b8);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+      --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 24px -12px rgba(0, 0, 0, 0.60);
+      --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.40), 0 20px 44px -14px rgba(0, 0, 0, 0.70);
+      --bubble-user-bg: #26305c;
+      --bubble-user-text: #e0e7ff;
+      --bubble-ai-bg: #1b2438;
+      --bubble-ai-text: #e6ecf7;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b1020;
+    --surface: #131a2c;
+    --surface-2: #18223a;
+    --surface-3: #263350;
+    --surface-inset: #1b2438;
+    --overlay: rgba(3, 7, 18, 0.62);
+    --text: #e6ecf7;
+    --text-strong: #f8fafc;
+    --text-soft: #c3cddf;
+    --muted: #93a1b8;
+    --text-faint: #6b7a93;
+    --ink-on-light: #0f172a;
+    --border: #26324a;
+    --border-strong: #34415c;
+    --control-border: #5c6a90;
+    --nav-bg: #0d1322;
+    --nav-text: #a9b6cb;
+    --nav-text-strong: #eef2ff;
+    --primary: #818cf8;
+    --primary-dark: #6366f1;
+    --primary-soft: #1e2547;
+    --primary-text: #c7d2fe;
+    --accent: #a78bfa;
+    --ring: rgba(129, 140, 248, 0.40);
+    --danger: #f87171;
+    --danger-dark: #ef4444;
+    --danger-soft: #45191c;
+    --green-bg: #10281d;
+    --green-text: #86efac;
+    --yellow-bg: #2a2109;
+    --yellow-text: #fde68a;
+    --red-bg: #3a1416;
+    --red-text: #fca5a5;
+    --gray-bg: #24304a;
+    --gray-text: #b8c4d6;
+    --ok-bg: #0d2a20;
+    --ok-text: #6ee7b7;
+    --ok-border: #14532d;
+    --ok-accent: #10b981;
+    --warn-bg: #2b2108;
+    --warn-text: #fcd34d;
+    --warn-border: #5b4410;
+    --warn-accent: #f59e0b;
+    --err-bg: #35151a;
+    --err-text: #fca5a5;
+    --err-border: #6b2027;
+    --row-flag-bg: #33280a;
+    --row-flag-text: #fde68a;
+    --grad-green: linear-gradient(90deg, #10b981, #34d399);
+    --grad-amber: linear-gradient(90deg, #f59e0b, #fbbf24);
+    --grad-rose: linear-gradient(90deg, #f43f5e, #fb7185);
+    --grad-slate: linear-gradient(90deg, #64748b, #94a3b8);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+    --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 24px -12px rgba(0, 0, 0, 0.60);
+    --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.40), 0 20px 44px -14px rgba(0, 0, 0, 0.70);
+    --bubble-user-bg: #26305c;
+    --bubble-user-text: #e0e7ff;
+    --bubble-ai-bg: #1b2438;
+    --bubble-ai-text: #e6ecf7;
+  }
+
+  /* ============================================================== base === */
+  /* Element defaults are wrapped in :where() on purpose. The old sheet used
+     `input[type=text] {...}` which has HIGHER specificity than `.form-control`, so
+     the class never actually won. :where() keeps specificity at 0 so any class
+     layered on top of a control always takes effect. */
+  :where(*) { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    padding-left: var(--sidebar-w);
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.6 var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.22;
+    letter-spacing: -0.02em;
+    margin: 0 0 20px;
+    color: var(--text-strong);
+  }
+  h2 {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    margin: 28px 0 12px;
+    color: var(--text-strong);
+  }
+  h3 { font-size: 15px; font-weight: 600; margin: 22px 0 10px; color: var(--text-strong); }
+  p { margin: 12px 0; }
+  ul, ol { padding-left: 22px; }
+  li { margin: 6px 0; }
+  main a { color: var(--primary); text-decoration: none; }
+  main a:hover { text-decoration: underline; }
+  :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* ============================================================ app shell === */
+  /* Fixed sidebar + body padding means zero views need editing to get the shell. */
+  nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-w);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    background: var(--nav-bg);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  nav a { color: var(--nav-text); text-decoration: none; }
+  nav a:hover { color: var(--nav-text-strong); }
+
+  .nav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: var(--overlay);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition), visibility var(--transition);
+  }
+
+  .nav-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 16px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .nav-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+  .nav-logo {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    box-shadow: 0 8px 18px -8px rgba(99, 102, 241, 0.85);
+  }
+  .nav-logo svg { display: block; border-radius: var(--radius-md); }
+  .nav-brand-text { display: flex; flex-direction: column; min-width: 0; }
+  .nav-brand-name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--nav-text-strong);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .nav-brand-sub {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--nav-text);
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .nav-toggle {
+    display: none;
+    margin-left: auto;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--nav-text-strong);
+    cursor: pointer;
+  }
+  .nav-toggle-bars { position: relative; display: block; width: 18px; height: 12px; }
+  .nav-toggle-bars::before,
+  .nav-toggle-bars::after,
+  .nav-toggle-bars i {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+  }
+  .nav-toggle-bars::before { top: 0; }
+  .nav-toggle-bars i { top: 5px; }
+  .nav-toggle-bars::after { top: 10px; }
+  body.nav-open .nav-toggle-bars::before { top: 5px; transform: rotate(45deg); }
+  body.nav-open .nav-toggle-bars i { opacity: 0; }
+  body.nav-open .nav-toggle-bars::after { top: 5px; transform: rotate(-45deg); }
+
+  .nav-panel {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .nav-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px 12px 18px;
+    scrollbar-width: thin;
+  }
+  .nav-group + .nav-group { margin-top: 16px; }
+  .nav-group-title {
+    margin: 0 0 6px 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(226, 232, 240, 0.45);
+  }
+  .nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 11px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+  }
+  .nav-link + .nav-link { margin-top: 2px; }
+  .nav-link svg { flex: 0 0 auto; width: 18px; height: 18px; opacity: 0.75; }
+  .nav-link:hover { background: rgba(255, 255, 255, 0.07); color: var(--nav-text-strong); }
+  .nav-link:hover svg { opacity: 1; }
+  .nav-link.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(168, 85, 247, 0.22));
+    color: var(--nav-text-strong);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  .nav-link.active svg { opacity: 1; color: #c4b5fd; }
+  .nav-link.active::before {
+    content: '';
+    position: absolute;
+    top: 9px;
+    bottom: 9px;
+    left: -12px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--brand-grad);
+  }
+
+  .nav-footer {
+    flex: 0 0 auto;
+    padding: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .nav-theme {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    margin: 0;
+    padding: 9px 11px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--nav-text);
+    font: 600 14px/1.3 var(--font-sans);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+  }
+  .nav-theme:hover { background: rgba(255, 255, 255, 0.09); color: var(--nav-text-strong); }
+  .nav-theme svg { flex: 0 0 auto; width: 18px; height: 18px; }
+
+  /* Reserved for the M2 logout form: <form class="nav-logout" method="post"
+     action="/admin/logout"><button class="nav-logout-btn">…</button></form> */
+  .nav-logout { margin: 0; }
+  .nav-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    margin: 0;
+    padding: 9px 11px;
+    border: 1px solid rgba(248, 113, 113, 0.28);
+    border-radius: var(--radius-md);
+    background: rgba(248, 113, 113, 0.10);
+    color: #fca5a5;
+    font: 600 14px/1.3 var(--font-sans);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+  }
+  .nav-logout-btn:hover { background: rgba(248, 113, 113, 0.20); color: #fecaca; }
+  .nav-logout-icon { flex: 0 0 auto; width: 18px; height: 18px; display: inline-flex; }
+  .nav-logout-icon svg { width: 18px; height: 18px; }
+
+  main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 24px 56px;
+    min-height: 60vh;
+  }
+
+  /* ========================================================== components === */
+  .grid {
+    display: grid;
+    /* min() keeps the track from ever exceeding the container, so a 360px phone
+       gets one column instead of a horizontal scrollbar. */
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 188px), 1fr));
+    gap: 14px;
+  }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+  }
+  .card .num { font-size: 30px; font-weight: 700; letter-spacing: -0.025em; color: var(--text-strong); font-variant-numeric: tabular-nums; }
+  .card h3:first-child { margin-top: 0; }
+  .card-hover { transition: transform var(--transition), box-shadow var(--transition); }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    scrollbar-width: thin;
+  }
+  table.table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 0; background: var(--surface); }
+  .table th, .table td {
+    /* Horizontal rules only - a full grid reads as a 2010-era spreadsheet. */
+    border-bottom: 1px solid var(--border);
+    padding: 11px 12px;
+    text-align: left;
+    font-size: 14px;
+    vertical-align: top;
+  }
+  .table thead th {
+    background: var(--surface-2);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .table tbody tr:last-child > th, .table tbody tr:last-child > td { border-bottom: 0; }
+  .table tbody tr:nth-child(even) { background: var(--surface-2); }
+  .table tbody tr:hover { background: var(--surface-3); }
+  /* orders_list.ejs flags pending rows with an inline background. An inline
+     shorthand cannot be themed from a stylesheet, so re-assert the token colour
+     for exactly those rows (the only <tr> in the app carrying a style attribute). */
+  .table tbody tr[style] > td { background-color: var(--row-flag-bg) !important; color: var(--row-flag-text); }
+  .table tbody tr[style]:hover > td { background-color: var(--row-flag-bg) !important; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 6px 6px 6px 0;
+    padding: 8px 14px;
+    cursor: pointer;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-soft);
+    font: 600 14px/1.2 var(--font-sans);
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast),
+                color var(--transition-fast), box-shadow var(--transition), transform var(--transition-fast);
+  }
+  .btn:hover { background: var(--surface-3); color: var(--text); text-decoration: none; }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: none; box-shadow: var(--ring-shadow), var(--shadow-sm); }
+  .btn-primary {
+    background-color: var(--primary);
+    background-image: var(--brand-grad);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(79, 70, 229, 0.28), 0 10px 20px -12px rgba(99, 102, 241, 0.85);
+  }
+  .btn-primary:hover { background-color: var(--primary-dark); background-image: var(--brand-grad); color: #ffffff; filter: brightness(1.06); }
+  .btn-danger {
+    background-color: var(--danger);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.24), 0 10px 20px -12px rgba(220, 38, 38, 0.7);
+  }
+  .btn-danger:hover { background-color: var(--danger-dark); border-color: transparent; color: #ffffff; }
+  .btn-small { padding: 5px 10px; font-size: 13px; }
+  .btn-lg { padding: 11px 20px; font-size: 15px; }
+  .btn-outline { background: transparent; box-shadow: none; }
+  .btn-outline:hover { background: var(--surface-3); }
+  .btn-ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--muted); }
+  .btn-ghost:hover { background: var(--surface-3); color: var(--text); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.55;
+    white-space: nowrap;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+  }
+  .badge-green { background: var(--green-bg); color: var(--green-text); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow-text); }
+  .badge-red { background: var(--red-bg); color: var(--red-text); }
+  .badge-gray { background: var(--gray-bg); color: var(--gray-text); }
+
+  .alert-error, .error {
+    color: var(--err-text);
+    background: var(--err-bg);
+    border: 1px solid var(--err-border);
+    border-left: 3px solid var(--danger);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    margin: 10px 0;
+  }
+  .alert-ok, .ok {
+    color: var(--ok-text);
+    background: var(--ok-bg);
+    border: 1px solid var(--ok-border);
+    border-left: 3px solid var(--ok-accent);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    margin: 10px 0;
+  }
+  .alert-warn, .warn {
+    color: var(--warn-text);
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-left: 3px solid var(--warn-accent);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    margin: 10px 0;
+  }
+  .alert-error ul, .alert-ok ul, .alert-warn ul,
+  .error ul, .ok ul, .warn ul { margin: 6px 0 0; padding-left: 20px; }
+
+  /* Filter / delete forms are marked style="display:inline" by several views. */
+  form[style*="display:inline"] { margin: 0; }
+
+  .form-group { margin: 14px 0; }
+  .form-group label { display: block; margin: 0 0 6px; font-weight: 600; font-size: 14px; color: var(--text-soft); }
+  label { display: block; margin: 12px 0 3px; font-weight: 600; font-size: 14px; color: var(--text-soft); }
+  .form-control {
+    width: 100%;
+    max-width: 560px;
+    padding: 9px 12px;
+    font: 400 14px/1.5 var(--font-sans);
+    box-sizing: border-box;
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+  }
+  .form-control:hover { border-color: var(--text-soft); }
+  .form-control:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: var(--ring-shadow);
+  }
+  .form-control-tall { min-height: 300px; }
+  :where(input[type=text], input[type=number], input[type=password], input[type=email],
+         input[type=url], input[type=tel], input[type=search], input[type=date],
+         input[type=file], textarea, select) {
+    width: 100%;
+    max-width: 560px;
+    padding: 9px 12px;
+    font: 400 14px/1.5 var(--font-sans);
+    color: var(--text);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-sizing: border-box;
+  }
+  :where(input[type=text], input[type=number], input[type=password], input[type=email],
+         input[type=url], input[type=tel], input[type=search], input[type=date],
+         input[type=file], textarea, select):hover { border-color: var(--text-soft); }
+  :where(textarea) { min-height: 90px; resize: vertical; }
+  /* Original rule kept: CSV boxes are tall and must stay monospace. */
+  textarea.csv { min-height: 220px; font-family: var(--font-mono); font-size: 13px; }
+  :where(button) {
+    margin: 6px 6px 6px 0;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  :where(button):disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .muted { color: var(--muted); font-size: 13px; }
+  code {
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font: 400 12.5px/1.5 var(--font-mono);
+    word-break: break-word;
+  }
+  /* orders_list.ejs paints one <code> block with an inline white background so the
+     delivered acc lines stay copy-paste friendly. That inline background is not
+     themeable, so pin the ink to stay readable against it. */
+  code[style] { color: var(--ink-on-light); }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    /* --muted, not --text-faint: this label is real text, so it needs 4.5:1. */
+    color: var(--muted);
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 44px 20px;
+    text-align: center;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+  }
+  .empty-state .empty-title { font-weight: 600; color: var(--text-soft); }
+
+  /* Stat tiles used by the dashboard. */
+  .stat { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 4px; }
+  .stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--brand-grad); }
+  .stat.is-green::before { background: var(--grad-green); }
+  .stat.is-amber::before { background: var(--grad-amber); }
+  .stat.is-rose::before { background: var(--grad-rose); }
+  .stat.is-slate::before { background: var(--grad-slate); }
+  .stat-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .stat-icon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-soft);
+    color: var(--primary-text);
+  }
+  .stat-icon svg { width: 20px; height: 20px; }
+  .stat-icon.is-green { background: var(--green-bg); color: var(--green-text); }
+  .stat-icon.is-amber { background: var(--yellow-bg); color: var(--yellow-text); }
+  .stat-icon.is-rose { background: var(--red-bg); color: var(--red-text); }
+  .stat-icon.is-slate { background: var(--gray-bg); color: var(--gray-text); }
+  .stat-label { font-size: 13px; font-weight: 600; letter-spacing: 0.01em; color: var(--muted); }
+  .stat-num {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-foot { margin-top: 10px; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ========================================================== responsive === */
+  /* Below 900px the sidebar becomes a top bar with a hamburger + dropdown panel. */
+  @media (max-width: 900px) {
+    body { padding-left: 0; padding-top: var(--topbar-h); }
+    body.nav-open { overflow: hidden; }
+    nav { right: 0; bottom: auto; width: auto; height: auto; }
+    /* min-height so the fixed bar is exactly --topbar-h tall and lines up with the
+       body padding. */
+    .nav-top { min-height: var(--topbar-h); padding: 10px 14px; }
+    .nav-toggle { display: inline-flex; align-items: center; }
+    .nav-panel {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: calc(100vh - var(--topbar-h));
+      transform: translateY(-8px);
+      opacity: 0;
+      visibility: hidden;
+      transition: transform var(--transition), opacity var(--transition), visibility var(--transition);
+    }
+    body.nav-open .nav-panel { transform: none; opacity: 1; visibility: visible; }
+    body.nav-open .nav-scrim { opacity: 1; visibility: visible; }
+    main { padding: 20px 16px 40px; }
+  }
+  @media (max-width: 640px) {
+    main { padding: 16px 12px 32px; }
+    h1 { font-size: 21px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .grid { grid-template-columns: 1fr; }
+    .card { padding: 16px; }
+    .card .num, .stat-num { font-size: 25px; }
+    .table th, .table td { padding: 9px 10px; }
+    .btn { padding: 7px 12px; }
+  }
+  @media (max-width: 380px) {
+    .form-control,
+    :where(input[type=text], input[type=number], input[type=password], input[type=email],
+           input[type=url], input[type=tel], input[type=search], input[type=date],
+           input[type=file], textarea, select) { max-width: 100%; }
+  }
+
+  /* Respect the OS "reduce motion" setting everywhere. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+    .card-hover:hover, .btn:active { transform: none; }
+  }
+
+  /* Printing the admin should not emit a dark sidebar on paper. */
+  @media print {
+    body { padding-left: 0; background: #ffffff; }
+    nav, .nav-scrim { display: none !important; }
+    main { max-width: none; padding: 0; }
+    .table-wrap, .card { box-shadow: none; }
+  }
+</style>
+<script>
+  // Resolve the theme as the first thing in <body> so the admin never paints light
+  // and then flips to dark. Explicit choice wins over the OS preference.
+  (function () {
+    var saved = null;
+    try { saved = window.localStorage.getItem('admin-theme'); } catch (e) { saved = null; }
+    if (saved !== 'dark' && saved !== 'light') {
+      saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<nav>
+  <div class="nav-scrim" id="navScrim"></div>
+  <div class="nav-top">
+    <a class="nav-brand" href="/admin">
+      <span class="nav-logo" aria-hidden="true"><svg viewBox="0 0 32 32" width="36" height="36" focusable="false"><defs><linearGradient id="lgNavBrand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"></stop><stop offset="0.55" stop-color="#8b5cf6"></stop><stop offset="1" stop-color="#a855f7"></stop></linearGradient></defs><rect x="1" y="1" width="30" height="30" rx="9" fill="url(#lgNavBrand)"></rect><path d="M10 12.5A2.5 2.5 0 0 1 12.5 10h7A2.5 2.5 0 0 1 22 12.5v4A2.5 2.5 0 0 1 19.5 19H14.6l-4.1 3.1a.6.6 0 0 1-1-.47V16.6A2.5 2.5 0 0 1 10 16.5Z" fill="#ffffff" fill-opacity="0.95"></path><circle cx="13.5" cy="14.5" r="1.2" fill="#6366f1"></circle><circle cx="16.5" cy="14.5" r="1.2" fill="#8b5cf6"></circle><circle cx="19.5" cy="14.5" r="1.2" fill="#a855f7"></circle></svg></span>
+      <span class="nav-brand-text">
+        <span class="nav-brand-name">Trợ lý Shop</span>
+        <span class="nav-brand-sub">Quản trị chatbot AI</span>
+      </span>
+    </a>
+    <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navPanel">
+      <span class="nav-toggle-bars" aria-hidden="true"><i></i></span>
+      <span class="sr-only">Bật/tắt menu điều hướng</span>
+    </button>
+  </div>
+  <div class="nav-panel" id="navPanel">
+    <div class="nav-scroll">
+      <div class="nav-group">
+        <p class="nav-group-title">Tổng quan</p>
+        <a class="nav-link" href="/admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"></rect><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"></rect><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"></rect><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"></rect></svg>Dashboard</a>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Kho kiến thức</p>
+        <a class="nav-link" href="/admin/products"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 8.5 12 3.5 3 8.5v7L12 20.5l9-5v-7Z"></path><path d="M3 8.5 12 13.5l9-5"></path><path d="M12 13.5v7"></path></svg>Products</a>
+        <a class="nav-link" href="/admin/faqs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5.5h16v11H9.5L4 20.5v-15Z"></path><path d="M8.5 10.2a3.5 3.5 0 0 1 6.9.8c0 1.7-3.4 2-3.4 3.5"></path><path d="M12 17.6h.01"></path></svg>FAQs</a>
+        <a class="nav-link" href="/admin/prompts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h4"></path></svg>Prompts</a>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Khách hàng</p>
+        <a class="nav-link" href="/admin/customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 19.5v-1.6a3.4 3.4 0 0 0-3.4-3.4H7.4A3.4 3.4 0 0 0 4 17.9v1.6"></path><circle cx="10" cy="8" r="3.2"></circle><path d="M20 19.5v-1.6a3.4 3.4 0 0 0-2.6-3.3"></path><path d="M15.6 5.2a3.2 3.2 0 0 1 0 5.6"></path></svg>Customers</a>
+        <a class="nav-link" href="/admin/orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9.5" cy="19.5" r="1.3"></circle><circle cx="17.5" cy="19.5" r="1.3"></circle><path d="M2.5 4h2.2l2.4 10.1a1.7 1.7 0 0 0 1.6 1.3h8.2a1.7 1.7 0 0 0 1.6-1.3L20.5 7.5H6"></path></svg>Đơn hàng</a>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Hệ thống</p>
+        <a class="nav-link" href="/admin/agent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.2 13.7 8 18.5 9.7 13.7 11.4 12 16.2 10.3 11.4 5.5 9.7 10.3 8 12 3.2Z"></path><path d="M18.4 15.2 19.1 17.5 21.4 18.2 19.1 18.9 18.4 21.2 17.7 18.9 15.4 18.2 17.7 17.5 18.4 15.2Z"></path></svg>Trợ lý AI</a>
+        <a class="nav-link" href="/admin/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h8"></path><path d="M17 6h3"></path><circle cx="14.5" cy="6" r="2.2"></circle><path d="M4 12h3"></path><path d="M12 12h8"></path><circle cx="9.5" cy="12" r="2.2"></circle><path d="M4 18h8"></path><path d="M17 18h3"></path><circle cx="14.5" cy="18" r="2.2"></circle></svg>Cài đặt</a>
+        <a class="nav-link" href="/admin/huong-dan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 6.6C10.4 5.1 7.9 4.5 4 4.5v13c3.9 0 6.4.6 8 2.1 1.6-1.5 4.1-2.1 8-2.1v-13c-3.9 0-6.4.6-8 2.1Z"></path><path d="M12 6.6v13"></path></svg>Hướng dẫn</a>
+      </div>
+    </div>
+    <div class="nav-footer">
+      <button type="button" class="nav-theme" id="themeToggle" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 13.6A8.2 8.2 0 0 1 10.4 3.5a8.2 8.2 0 1 0 10.1 10.1Z"></path></svg>
+        <span id="themeLabel">Chế độ tối</span>
+      </button>
+      <!-- Logout is a POST form (not a link) so the session cookie is cleared
+           server-side; the same-origin guard in src/server.js protects it.
+           Classes .nav-logout / .nav-logout-btn / .nav-logout-icon are
+           reserved and styled in this stylesheet. -->
+      <form class="nav-logout" method="post" action="/admin/logout">
+        <button type="submit" class="nav-logout-btn">
+          <span class="nav-logout-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M15 17l5-5-5-5"></path><path d="M20 12H9"></path><path d="M12 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"></path></svg></span>
+          <span>Đăng xuất</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</nav>
+<script>
+  (function () {
+    var root = document.documentElement;
+    var links = document.querySelectorAll('.nav-link');
+    var path = location.pathname.replace(/\/+$/, '') || '/';
+    var i, link, href;
+
+    // The server passes no "active page" local, so derive it from the URL.
+    for (i = 0; i < links.length; i++) {
+      link = links[i];
+      href = (link.getAttribute('href') || '').replace(/\/+$/, '') || '/';
+      if (href === path || (href !== '/admin' && path.indexOf(href + '/') === 0)) {
+        link.className += ' active';
+        link.setAttribute('aria-current', 'page');
+      }
+    }
+
+    var toggle = document.getElementById('navToggle');
+    function setMenu(open) {
+      if (open) { document.body.classList.add('nav-open'); } else { document.body.classList.remove('nav-open'); }
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    toggle.addEventListener('click', function () {
+      setMenu(document.body.classList.indexOf('nav-open') === -1);
+    });
+    document.getElementById('navScrim').addEventListener('click', function () { setMenu(false); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) { setMenu(false); }
+    });
+
+    var themeBtn = document.getElementById('themeToggle');
+    var themeLabel = document.getElementById('themeLabel');
+    function syncTheme() {
+      var dark = root.getAttribute('data-theme') === 'dark';
+      themeBtn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+      themeLabel.textContent = dark ? 'Chế độ sáng' : 'Chế độ tối';
+    }
+    syncTheme();
+    themeBtn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { window.localStorage.setItem('admin-theme', next); } catch (e) { /* private mode: theme is not persisted */ }
+      syncTheme();
+    });
+  })();
+</script>

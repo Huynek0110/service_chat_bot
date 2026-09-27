@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cài đặt — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Cài đặt shop</h1>
+
+<% if (result) { %><div class="alert-ok"><%= result %></div><% } %>
+<% if (error) { %><div class="alert-error"><%= error %></div><% } %>
+
+<h2>QR thanh toán chung</h2>
+<% if (paymentQrPreview) { %>
+<p><img src="/admin/uploads/<%= paymentQrPreview %>" alt="QR thanh toán" style="max-width:240px;border:1px solid #ddd"></p>
+<% } else { %>
+<p class="muted">Chưa có QR thanh toán chung.</p>
+<% } %>
+<form method="post" action="/admin/settings/payment-qr" enctype="multipart/form-data">
+  <div class="form-group">
+    <label for="qr">Tải QR mới (PNG/JPG, tối đa 2MB)</label>
+    <input type="file" id="qr" class="form-control" name="qr" accept=".png,.jpg,.jpeg" required>
+  </div>
+  <p><button type="submit" class="btn btn-primary">Lưu QR thanh toán</button></p>
+</form>
+
+<h2>Thư viện file acc</h2>
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr><th>File</th><th>Còn lại (dòng)</th></tr>
+  </thead>
+  <tbody>
+  <% if (accFiles.length === 0) { %>
+    <tr><td colspan="2" class="muted">Chưa có file acc nào.</td></tr>
+  <% } %>
+  <% accFiles.forEach(function(f) { %>
+    <tr>
+      <td><%= f.file %></td>
+      <td><%= f.lines %></td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+<form method="post" action="/admin/settings/acc-upload" enctype="multipart/form-data">
+  <div class="form-group">
+    <label for="acc_file">Tải file acc mới (.txt, tối đa 1MB — mỗi dòng là 1 acc)</label>
+    <input type="file" id="acc_file" class="form-control" name="acc_file" accept=".txt" required>
+  </div>
+  <p><button type="submit" class="btn btn-primary">Tải lên file acc</button></p>
+</form>
+<p class="muted">Lưu ý: khi giao hàng, dòng acc đã bán tự động chuyển sang file <code>&lt;tên&gt;+đã bán.txt</code> để lưu trữ.</p>
+</main>
+</body>
+</html>

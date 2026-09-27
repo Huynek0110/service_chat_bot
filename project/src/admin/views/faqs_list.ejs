@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQs — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>FAQs</h1>
+<% if (typeof index_error !== 'undefined' && index_error) { %>
+<div class="alert-warn">Đã lưu vào database nhưng index vector (RAG) thất bại. Dữ liệu vẫn an toàn; hãy thử sửa + lưu lại để re-index.</div>
+<% } %>
+<form method="get" action="/admin/faqs">
+  <input type="text" name="q" class="form-control" placeholder="Tìm theo câu hỏi / câu trả lời..." value="<%= q %>">
+  <button type="submit" class="btn btn-primary">Tìm</button>
+  <% if (q) { %><a class="btn btn-small" href="/admin/faqs">Xóa lọc</a><% } %>
+</form>
+<p>
+  <a class="btn btn-primary" href="/admin/faqs/new">+ Thêm FAQ</a>
+  <a class="btn" href="/admin/faqs/export">Export CSV</a>
+  <a class="btn" href="/admin/faqs/import">Import CSV</a>
+</p>
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr><th>ID</th><th>Câu hỏi</th><th>Câu trả lời</th><th>Cập nhật</th><th>Thao tác</th></tr>
+  </thead>
+  <tbody>
+  <% if (faqs.length === 0) { %>
+    <tr><td colspan="5" class="muted">Chưa có FAQ.</td></tr>
+  <% } %>
+  <% faqs.forEach(function(f) { %>
+    <tr>
+      <td><%= f.id %></td>
+      <td><%= f.question %></td>
+      <td><%= f.answer %></td>
+      <td><%= f.updated_at %></td>
+      <td>
+        <a class="btn btn-small" href="/admin/faqs/<%= f.id %>/edit">Sửa</a>
+        <form method="post" action="/admin/faqs/<%= f.id %>/delete" style="display:inline" onsubmit="return confirm('Xóa FAQ này?')">
+          <button type="submit" class="btn btn-small btn-danger">Xóa</button>
+        </form>
+      </td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+</main>
+</body>
+</html>

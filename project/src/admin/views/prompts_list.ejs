@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System Prompts — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>System Prompts</h1>
+<p class="muted">File đang được bot sử dụng: <strong><%= active %></strong>.
+Đổi file active bằng nút "Đặt active" bên dưới — có hiệu lực ngay, không cần restart server.</p>
+<p><a class="btn btn-primary" href="/admin/prompts/new">+ Tạo file prompt mới</a></p>
+<div class="table-wrap">
+<table class="table">
+  <thead><tr><th>File</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+  <tbody>
+  <% if (files.length === 0) { %>
+    <tr><td colspan="3" class="muted">Chưa có file prompt nào.</td></tr>
+  <% } %>
+  <% files.forEach(function(f) { %>
+    <tr>
+      <td><%= f.filename %></td>
+      <td><% if (f.filename === active) { %><span class="badge badge-green">Đang dùng (active)</span><% } %></td>
+      <td><a class="btn btn-small" href="/admin/prompts/<%= encodeURIComponent(f.filename) %>">Xem / Sửa</a>
+      <% if (f.filename !== active) { %>
+        <form method="post" action="/admin/prompts/active" style="display:inline">
+          <input type="hidden" name="filename" value="<%= f.filename %>">
+          <button type="submit" class="btn btn-small btn-primary">Đặt active</button>
+        </form>
+      <% } %>
+      </td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+</main>
+</body>
+</html>

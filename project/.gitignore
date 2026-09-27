@@ -1,0 +1,42 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Auto-generated session signing key (SECRET - signs admin login cookies)
+data/session-secret.key
+
+# Uploaded files (QR images)
+data/uploads/
+
+# Account stock files (SECRET - sold accounts)
+products/*.txt
+
+# Backups of the database / uploads
+backup/
+
+# Logs
+logs/
+*.log
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary
+*.tmp
+*.temp

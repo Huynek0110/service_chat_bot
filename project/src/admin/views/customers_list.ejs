@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khách hàng — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Khách hàng</h1>
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr><th>ID</th><th>Kênh</th><th>User ID</th><th>Tên</th><th>Lead status</th><th>Handoff</th><th>Tin nhắn</th><th>Thấy lần cuối</th><th>Thao tác</th></tr>
+  </thead>
+  <tbody>
+  <% if (customers.length === 0) { %>
+    <tr><td colspan="9" class="muted">Chưa có khách hàng.</td></tr>
+  <% } %>
+  <% customers.forEach(function(c) { %>
+    <tr>
+      <td><%= c.id %></td>
+      <td><%= c.channel %></td>
+      <td><%= c.external_user_id %></td>
+      <td><%= c.display_name %></td>
+      <td><%= c.lead_status %></td>
+      <td><span class="badge <%= c.human_handoff ? 'badge-red' : 'badge-green' %>"><%= c.human_handoff ? 'Bật' : 'Tắt' %></span></td>
+      <td><%= c.message_count %></td>
+      <td><%= c.last_seen_at %></td>
+      <td><a class="btn btn-small" href="/admin/customers/<%= c.id %>">Chi tiết</a></td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Import FAQs (CSV) — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Import FAQs từ CSV</h1>
+<p class="muted">Dán nội dung CSV (kèm dòng header) vào ô bên dưới rồi bấm Import. Không hỗ trợ upload file.
+Header yêu cầu: <code>question,answer</code>.
+Dòng có <code>question</code> trùng khớp sẽ được cập nhật đáp án, ngược lại sẽ tạo mới.</p>
+<% if (result) { %>
+<div class="<%= (result.errors && result.errors.length) ? 'alert-warn' : 'alert-ok' %>">
+  Kết quả: tạo mới <strong><%= result.created %></strong> · cập nhật <strong><%= result.updated %></strong> · lỗi index vector <strong><%= result.indexErrors %></strong>.
+  <% if (result.errors && result.errors.length) { %>
+  <ul><% result.errors.forEach(function(e) { %><li><%= e %></li><% }); %></ul>
+  <% } %>
+</div>
+<% } %>
+<form method="post" action="/admin/faqs/import">
+  <div class="form-group">
+    <label for="csv">Nội dung CSV</label>
+    <textarea id="csv" class="form-control csv" name="csv" placeholder="question,answer"><%= csv %></textarea>
+  </div>
+  <p><button type="submit" class="btn btn-primary">Import</button> <a class="btn" href="/admin/faqs">Về danh sách</a></p>
+</form>
+</main>
+</body>
+</html>

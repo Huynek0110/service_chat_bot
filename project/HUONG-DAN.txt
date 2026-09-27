@@ -1,0 +1,311 @@
+================================================================
+HUONG DAN SU DUNG CHATBOT BAN HANG (danh cho nguoi khong biet code)
+================================================================
+
+May ban DA CO SAN: Node.js, LM Studio + model AI (google/gemma-3-1b),
+thu vien project. KHONG CAN CAI THEM GI de chay thu.
+
+SANG MAY MOI: chi can cai Node.js LTS truoc, roi chep ca thu muc
+project sang (giua nguyen file .env + data/app.db thi mo la chay
+ngay). Neu thieu thu gi, file 2-Khoi-Dong-Server.bat se TU LO:
+tu tao .env, tu cai thu vien, tu dung database + hang mau lan dau
+(can bat LM Studio truoc). LM Studio + ngrok thi dung file
+0-Cai-Dat-Ollama-Model.bat muc 1 va 4 (da test chay that).
+
+File "0-Cai-Dat-Ollama-Model.bat": huong dan LM Studio + model neu
+doi may moi. Cach dung:
+  - Muc [1]: load model chat google/gemma-3-1b trong LM
+    Studio (mo LM Studio -> tim model -> Download -> Load ->
+    Start Server port 1234).
+  - Muc [2]: KIEM TRA model da Load chua. Neu bot tra loi
+    rong hoac loi, chay muc nay truoc - no se bao loai
+    "Server chua chay" hay "Model chua Load".
+  - Muc [3]: BAT RAG (tuy chon). Mac dinh RAG TAT, bot van chat
+    binh thuong, chi khong tu tra cuu hang/FAQ trong database.
+    Muon bat: nap 1 model embedding vao LM Studio, mo file .env,
+    dien LMSTUDIO_EMBEDDING_MODEL + EMBEDDING_DIM=768, luu lai,
+    khoi dong lai Server, roi chay lai lenh nap kien thuc:
+      node -e "import('./src/rag/indexer.js').then(m=>m.reindexAll())"
+  - Muc [4]: cai ngrok (khac biet voi phan AI).
+  - Muc [5]: xem cac model LM Studio dang phuc vu.
+
+
+----------------------------------------------------------------
+PHAN 1: KHOI DONG HANG NGAY (moi lan mo may len)
+----------------------------------------------------------------
+
+Cach de nhat: nhay DUP_file "Khoi-Dong-Tat-Ca.bat".
+No se tu mo 2 cua so den: "LM Studio" roi "Chatbot Server".
+Cho khoang 20-30 giay, roi mo trinh duyet (Chrome/Coc Coc) vao:
+
+    http://localhost:3000/admin
+
+Dang nhap:
+    Tai khoan: admin
+    Mat khau:  doi-mat-khau-nay   (xem Phan 5 de doi mat khau)
+
+Luu y:
+- Trong luc dung bot, GIU NGUYEN 2 cua so den, dung tat.
+- Tat bot: dong 2 cua so den (hoac nhan Ctrl+C trong tung cua so).
+- Cua so LM Studio phai bat "Local Server" tren port 1234. Kiem
+  tra nhanh: mo trinh duyet vao http://localhost:1234/v1/models
+  (thay danh sach model la OK).
+
+MO BOT TELEGRAM (hien tai dung Telegram, khong dung Messenger):
+- Mo 2 file bat nhu tren (LM Studio + Server). Server se tu noi
+  Telegram, KHONG CAN ngrok, KHONG CAN link gi ca.
+- Mo app Telegram tren dien thoai -> tim bot cua shop -> bam
+  START (hoac go /start) -> chat nhu nguoi that.
+- Kiem tra bot co dang noi khong: mo trinh duyet vao
+    http://localhost:3000/health
+  thay telegram connected:true la OK.
+- Tat/m bat Messenger: mo file .env, sua dong MESSENGER_ENABLED
+  true/false, khoi dong lai Server. Hien de false.
+- Sang may moi: sau khi copy thu muc, mo file .env dien
+  TELEGRAM_ENABLED=true + TELEGRAM_BOT_TOKEN (lay tu BotFather),
+  roi mo nhu binh thuong. Khong can ngrok cho Telegram.
+- Mo thu cong tung buoc (neu file Tat-Ca loi):
+    Buoc 1: mo LM Studio, bat Local Server port 1234, doi 15 giay.
+    Buoc 2: mo "2-Khoi-Dong-Server.bat".
+- Chat thu khong can Messenger: mo "3-Chat-Thu.bat",
+  go cau hoi, go "exit" de thoat. Moi cau tra loi mat 20-30 giay
+  (may dang "suy nghi" bang AI, la binh thuong).
+
+
+----------------------------------------------------------------
+PHAN 2: NHAP HANG HOA CUA SHOP (viec quan trong nhat)
+----------------------------------------------------------------
+
+Bot dang dung DU LIEU MAU (ao thun demo). Ban phai nhap hang that
+thi bot moi tu van dung.
+
+LUU Y VE RAG: mac dinh RAG TAT, bot doc hang/gia/ton kho truc tiep
+tu database nen van dung. Phan "tu tra cuu van ban san pham/FAQ"
+chi hoat dong khi ban BAT RAG (xem muc [3] cua file
+0-Cai-Dat-Ollama-Model.bat). Neu bat RAG, sau khi them/sua hang
+nho chay lai lenh nap lai kien thuc, neu khong bot van dung duoc
+nhung se it biet them ve san pham moi.
+
+Cach 1 - Nhap tung mon (it hang):
+  1. Vao http://localhost:3000/admin -> Products -> Them moi.
+  2. Dien: ten, mo ta, gia (VND, chi go so), ton kho, danh muc, SKU
+     (ma hang, vd: AO-001 - neu khong co ma thi tu dat, khong trung).
+  3. Bam Luu. Xong la bot biet ngay, khong can khoi dong lai.
+  4. Het hang thi sua "ton kho" ve 0 (dung xoa san pham).
+
+Cach 2 - Nhap hang loat bang Excel (nhieu hang):
+  1. Mo Excel, tao bang dung thu tu cot nhu sau:
+     sku | name | description | price | stock_quantity | category | image_url | is_active
+     Vi du 1 dong:
+     AO-001 | Ao thun trang | Cotton 100%, form dep | 199000 | 50 | Ao thun |  | 1
+  2. Luu file dang CSV (File -> Save As -> CSV UTF-8).
+  3. Mo file CSV bang Notepad, copy TOAN BO noi dung.
+  4. Vao /admin -> Products -> Import -> dan vao o text -> Bam Import.
+  5. Nut Export de tai toan bo hang ra CSV sua lai roi Import vao.
+
+Tuong tu cho FAQ (/admin -> FAQs): cau hoi khach hay hoi
+(doi tra, ship, COD, size...) va cau tra loi cua shop.
+
+
+----------------------------------------------------------------
+PHAN 3: DOI TEN SHOP, GIONG VAN CUA BOT
+----------------------------------------------------------------
+
+Vao /admin -> Prompts:
+- Bam vao file default.md -> sua noi dung -> Luu.
+  Tin nhan tiep theo cua khach se dung giong moi ngay, khong can
+  khoi dong lai.
+- Nhan nut "Dat active" neu co nhieu kich ban de doi qua lai.
+
+Meo: ghi ten shop, cach xung ho (vd "em/minh - ban/chi") vao dau
+file prompt de bot nho.
+
+
+----------------------------------------------------------------
+PHAN 4: XEM KHACH + CHUYEN NGUOI THAT
+----------------------------------------------------------------
+
+Vao /admin -> Customers:
+- Thay danh sach khach (ten, lan cuoi nhan, trang thai lead).
+- Bam vao tung khach de xem lich su chat.
+- Khi khach doi gap nhan vien, bot tu danh dau "dang chuyen nguoi
+  that" va NGUNG tra loi de ban tu chat tren Fanpage.
+- Muon bot tra loi lai: vao chi tiet khach -> chon Resume AI (tat handoff).
+
+
+----------------------------------------------------------------
+PHAN 5: NOI BOT VAO FANPAGE FACEBOOK (chi lam 1 lan)
+----------------------------------------------------------------
+
+Chuan bi: 1 Fanpage ma ban lam Admin + tai khoan Facebook.
+
+Buoc 1 - Tao App tren Meta:
+  1. Vao developers.facebook.com -> My Apps -> Create App.
+  2. Chon truong hop "Other" -> loai "Business" -> dat ten -> Create.
+  3. Them san pham Messenger: Add Use Case -> "Send and receive
+     messages using Messenger" (tuy nut co the doi ten theo dot).
+
+Buoc 2 - Lay 4 cai ma (ghi ra giay):
+  a) App Secret: App Settings -> Basic -> App Secret -> Show
+     -> nhap mat khau Facebook -> copy.
+  b) Page ID: vao Fanpage -> Gioi thieu (About) -> copy Page ID.
+     (hoac trong Meta Business Suite -> Cai dat Trang)
+  c) Page Access Token: trong phan Messenger settings -> Access Tokens
+     -> Add/chon Page -> cap quyen pages_messaging -> Generate -> copy.
+     (Token dai, mat la phai tao lai.)
+  d) Verify Token: TU DAT 1 chuoi bat ky, vd: shop-toi-verify-123.
+     Nho chinh xac chuoi nay.
+
+Buoc 3 - Dien vao file .env:
+  1. Trong thu muc project, mo file ".env" bang Notepad.
+  2. Dien 4 dong:
+       MESSENGER_VERIFY_TOKEN=chuoi-ban-tu-dat-o-buoc-d
+       MESSENGER_APP_SECRET=ma-o-buoc-a
+       MESSENGER_PAGE_ACCESS_TOKEN=ma-o-buoc-c
+       MESSENGER_PAGE_ID=ma-o-buoc-b
+  3. Luu file. Tat server (dong cua so Server) roi mo lai bang
+     file 2-Khoi-Dong-Server.bat de nhan cau hinh moi.
+  4. Doi luon 2 dong nay cho an toan:
+       ADMIN_USERNAME=admin
+       ADMIN_PASSWORD=mat-khau-moi-cua-ban
+
+Buoc 4 - Tao duong dan HTTPS tam (vi Facebook bat buoc HTTPS):
+  1. Mo file "0-Cai-Dat-Ollama-Model.bat" -> chon muc [4] Ngrok.
+     No tu cai ngrok, roi hoi authtoken.
+  2. Lay authtoken MIEN PHI: vao ngrok.com dang ky -> Dashboard
+     -> Your Authtoken -> copy -> dan vao cua so den -> Enter.
+     (Chi lam 1 lan duy nhat.)
+  3. Hang ngay mo link bang file "4-Mo-Ngrok.bat".
+     Copy dia chi https hien ra, vd: https://abc-123.ngrok-free.app
+  4. Chu y: ngrok MIEN PHI doi dia chi moi lan tat/mo lai.
+     Moi lan doi phai lam lai Buoc 5.
+
+Buoc 5 - Dang ky webhook voi Facebook:
+  1. Trong App Dashboard -> Webhooks (hoac Messenger -> Webhooks)
+     -> Add Callback URL:
+       URL:      https://dia-chi-ngrok-cua-ban/webhook/messenger
+       Verify Token: chuoi-ban-tu-dat-o-buoc-d
+     Bam Verify and Save. Bao thanh cong la duoc.
+     (Neu bao loi: kiem tra server + ngrok dang chay, token khop.)
+  2. Add Subscriptions cho Page: chon Page -> tich vao
+     "messages" va "messaging_postbacks" -> Subscribe.
+
+Buoc 6 - Test:
+  1. Dung nick Facebook KHAC (khong phai nick dang bai) nhan tin
+     vao Fanpage: "shop co ao thun khong?".
+  2. Bot tra loi trong vai chuc giay la THANH CONG.
+  3. Xem cua so Server thay dong log la tin nhan da qua.
+
+Luu y quan trong:
+- App de che do Development: chi nick co vai tro trong App/Page
+  (admin, tester) chat duoc. Muon cong khai cho moi nguoi phai
+  xin phe duyet quyen (App Review) + xac minh doanh nghiep.
+  Cu test voi nick phu truoc.
+- Bot chi duoc nhan tu do trong 24h tu tin cuoi cua khach
+  (quy dinh cua Facebook). Qua 24h chi nhan duoc tin cham soc
+  dac biet.
+- Ngrok mien phi hay doi link. Dung on dinh lau dai thi mua
+  domain + thue VPS (hoac goi ngrok tra phi lay link co dinh).
+
+
+----------------------------------------------------------------
+PHAN 6: BAT/TAT TIM KIEM INTERNET (tuy chon)
+----------------------------------------------------------------
+
+Mac dinh TAT (bot chi tra loi theo du lieu shop).
+Muon bot tra loi duoc ca thoi tiet/tin tuc:
+  1. Dang ky mien phi tai tavily.com -> lay API key (dang tvly-...,
+     duoc 1000 luot/thang mien phi, khong can the).
+  2. Mo file .env, sua:
+       ENABLE_WEB_SEARCH=true
+       WEB_SEARCH_PROVIDER=tavily
+       WEB_SEARCH_API_KEY=tvly-dan-key-cua-ban-vao-day
+  3. Khoi dong lai server.
+
+
+----------------------------------------------------------------
+PHAN 7: SU CO THUONG GAP
+----------------------------------------------------------------
+
+1. Mo Server bao loi ket noi LM Studio / bot tra loi "dang gap su co":
+   -> LM Studio chua chay, hoac chua bat "Local Server" port 1234.
+      Mo LM Studio, chon port 1234, bam Start Server, roi mo lai
+      Server. Kiem tra nhanh: mo trinh duyet vao
+      http://localhost:1234/v1/models
+
+1b. Bot tra loi duoc nhung bao loi 404 / khong thay model:
+   -> Chay nhanh file "0-Cai-Dat-Ollama-Model.bat" -> muc [2].
+      No se bao ngay "Server chua chay" hay "Model chua Load".
+   -> Cach 1: Mo LM Studio, tim "google/gemma-3-1b", bam Download
+      roi bam "Load" (BAY phai Load, moi Download thi chua duoc).
+   -> Cach 2: Neu LM Studio hien ten khac, xem muc [5] de lay
+      ten server THUC SU phuc vu, roi sua .env cho khop:
+        LMSTUDIO_CHAT_MODEL=<ten-that>
+      Luu .env roi khoi dong lai Server.
+      Khong co chuc nang chon model tren giao dien.
+
+1c. Bot tra loi dung nhung "it biet" ve san pham moi:
+   -> RAG dang TAT (mac dinh). Bot van dung, dung tra cu them.
+      Muon bat RAG xem muc [3] cua file 0-Cai-Dat-Ollama-Model.bat.
+
+1b2. Bot CHAT duoc nhung lenh "tim san pham / dat hang / kiem tra ton kho"
+    lai khong chay, hoac bot toan tra loi van ban:
+   -> Do model 1B yeu, kha nang dinh nghia tool cua no khong
+      tot. Bot van tra loi duoc binh thuong.
+   -> Sua 1: bat RAG (muc [3]) de bot duoc them context
+      san pham tu database, it phai tu goi tool.
+   -> Sua 2: doi model manh hon trong .env:
+        LMSTUDIO_CHAT_MODEL=<ten-model-khac>
+      roi bam "Load" model do trong LM Studio.
+
+1d. Bot tra loi rat lau roi bao loi het thoi gian:
+   -> May dang "suy nghi" bang AI local. Mo file .env, tang
+      LMSTUDIO_TIMEOUT_MS (mac dinh 180000) roi khoi dong lai Server.
+
+1e. Bao loi "Loi tao vector RAG" o /admin:
+   -> RAG bat nhung thieu model embedding. Nap model embedding vao
+      LM Studio va dien dung LMSTUDIO_EMBEDDING_MODEL + EMBEDDING_DIM
+      trong .env. San pham/FAQ van duoc luu binh thuong.
+
+2. Vao localhost:3000/admin khong duoc (trang trang / loi ket noi):
+   -> Server chua chay. Xem cua so Server co dong "Server started
+      on port 3000" chua.
+
+3. Quen mat khau admin:
+   -> Mo file .env bang Notepad, xem dong ADMIN_PASSWORD,
+      khoi dong lai server.
+
+4. Facebook bao Verify webhook that bai:
+   -> Kiem tra 3 thu: server dang chay, ngrok dang chay,
+      Verify Token trong Dashboard KHOP 100% voi .env.
+
+5. Nhan tin Page ma bot khong tra loi:
+   -> Xem cua so Server co log tin nhan den khong.
+      Khong co log: webhook chua dung (xem muc 4).
+      Co log loi 401: sai App Secret. Co log loi chu ky:
+      kiem tra MESSENGER_APP_SECRET.
+   -> Kiem tra /admin -> Customers: khach co dang o che do
+      "chuyen nguoi that" khong (neu co, bot co tinh im lang).
+
+6. Bot tra loi sai gia/ton kho:
+   -> Gia/ton trong /admin -> Products chua dung thi sua lai.
+      Bot doc truc tiep tu do.
+
+7. May bao cong 3000 dang dung (port in use):
+   -> Co 2 server dang chay. Tat bot cua so Server thua di.
+
+
+----------------------------------------------------------------
+PHAN 8: SAO LUU + CHAY LAU DAI
+----------------------------------------------------------------
+
+- Sao luu: nhay dup file "Sao-Luu-Du-Lieu.bat" moi tuan.
+  File backup nam trong thu muc backup.
+  Phuc hoi: TAT server, copy file backup de len data\app.db.
+- Muon bot chay ca dem: de may tinh BAT + khong tat 2 cua so den.
+  (Ngu/sleep la bot dung.)
+- Dung lau dai that: can 1 may chu online 24/7 (VPS) + ten mien
+  rieng thay cho ngrok. Khi nao can thi bao toi huong dan tiep.
+
+
+Chuc shop ban dat hang!

@@ -1,0 +1,27 @@
+# ---------------------------------------------------------------------------
+# Line-ending policy.
+#
+# Why this file exists: several .bat launchers use `goto`/labels inside
+# parenthesised blocks, which silently misbehave on Windows when the file has
+# LF-only endings. Git's core.autocrlf=true normalises on checkout, but that
+# normalisation is invisible in review and easy to defeat, so the rule is
+# pinned here instead.
+# ---------------------------------------------------------------------------
+
+# Batch launchers MUST be CRLF. Do not "fix" these to LF.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Source and config stay LF in the repo; the working copy may be CRLF.
+*.js    text eol=lf
+*.json  text eol=lf
+*.ejs   text eol=lf
+*.sql   text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+
+# Nothing in this repo is binary except uploaded QR images, which are ignored.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.db    binary

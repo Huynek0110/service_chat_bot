@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= isEdit ? 'Sửa FAQ' : 'Thêm FAQ' %> — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1><%= isEdit ? 'Sửa FAQ' : 'Thêm FAQ' %></h1>
+<% if (errors && errors.length) { %>
+<div class="alert-error"><ul><% errors.forEach(function(e) { %><li><%= e %></li><% }); %></ul></div>
+<% } %>
+<form method="post" action="<%= action %>">
+  <div class="form-group">
+    <label for="question">Câu hỏi *</label>
+    <textarea id="question" class="form-control" name="question" required><%= faq.question %></textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="answer">Câu trả lời *</label>
+    <textarea id="answer" class="form-control" name="answer" required><%= faq.answer %></textarea>
+  </div>
+
+  <p><button type="submit" class="btn btn-primary"><%= isEdit ? 'Lưu thay đổi' : 'Tạo FAQ' %></button>
+  <a class="btn" href="/admin/faqs">Hủy</a></p>
+</form>
+</main>
+</body>
+</html>

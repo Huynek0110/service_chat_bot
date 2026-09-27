@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tạo prompt mới — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Tạo file prompt mới</h1>
+<% if (error) { %><div class="alert-error"><%= error %></div><% } %>
+<form method="post" action="/admin/prompts">
+  <div class="form-group">
+    <label for="filename">Tên file (chỉ a-z, 0-9, _ - và kết thúc bằng .md, ví dụ: sales.md)</label>
+    <input type="text" id="filename" class="form-control" name="filename" required pattern="[a-zA-Z0-9_-]+\.md" value="<%= filename %>">
+  </div>
+
+  <div class="form-group">
+    <label for="content">Nội dung</label>
+    <textarea id="content" class="form-control" name="content" style="min-height:300px"><%= content %></textarea>
+  </div>
+
+  <p><button type="submit" class="btn btn-primary">Tạo file</button> <a class="btn" href="/admin/prompts">Hủy</a></p>
+</form>
+</main>
+</body>
+</html>

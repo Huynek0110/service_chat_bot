@@ -1,0 +1,133 @@
+================================================================
+HUONG DAN NOI BOT VAO FANPAGE - 4 CAI MA + VERIFY WEBHOOK
+================================================================
+Tinh trang hien tai (ngay tao file):
+- Server + LM Studio + ngrok DANG CHAY tren may ban.
+- Link public tam thoi:
+    https://hueless-nathaly-melodically.ngrok-free.dev
+- Link dang ky webhook (Callback URL), copy nguyen dong nay:
+    https://hueless-nathaly-melodically.ngrok-free.dev/webhook/messenger
+- Verify Token (da dien san trong file .env):
+    shop-verify-9X7mK2pQ5vT8wZ4n
+- Da test: Meta goi GET verify se duoc dap dung, sai token bi 403.
+
+CHU Y QUAN TRONG: link ngrok MIEN PHI doi moi lan tat/mo lai.
+Neu link doi, phai lam lai Muc 4 (doi Callback URL) + bao toi de
+toi mo tunnel moi. Muon link co dinh thi dung ngrok tra phi hoac
+thue VPS + domain (bao toi khi can).
+
+
+----------------------------------------------------------------
+MUC 1: VERIFY TOKEN (da xong 90% - chi can copy)
+----------------------------------------------------------------
+Verify Token la mat khau rieng de Facebook chac rang URL webhook
+la cua ban, khong phai cua ke gia mao.
+
+- Ma hien tai:  shop-verify-9X7mK2pQ5vT8wZ4n
+  (da nam trong file .env dong MESSENGER_VERIFY_TOKEN)
+- Khi Facebook hoi "Verify Token", dan NGUYEN chuoi tren vao.
+- Muon tu dat chuoi khac: mo file .env bang Notepad, sua dong
+  MESSENGER_VERIFY_TOKEN=..., luu lai, khoi dong lai Server
+  (tat mo lai file 2-Khoi-Dong-Server.bat), roi dung chuoi moi.
+
+
+----------------------------------------------------------------
+MUC 2: APP SECRET (ma bi mat cua App)
+----------------------------------------------------------------
+App Secret dung de kiem tra chu ky moi tin nhan Facebook gui toi
+(chong gia mao). KHONG chia se cho ai, KHONG dang len mang.
+
+Cac buoc lay:
+  1. Vao developers.facebook.com -> My Apps -> chon App cua ban.
+  2. Menu trai: App Settings -> Basic.
+  3. O App Secret: bam Show -> nhap mat khau Facebook -> copy ma.
+  4. Mo file .env bang Notepad, tim dong:
+       MESSENGER_APP_SECRET=
+     dan ma vao sau dau =, vd:
+       MESSENGER_APP_SECRET=abc123def456...
+  5. Luu file .env. Khoi dong lai Server de nhan (tat mo lai
+     file 2-Khoi-Dong-Server.bat).
+  6. Tu test: gui POST khong chu ky vao link webhook phai bi 401.
+     (Toi da test san: sai/khong chu ky -> 401, dung -> qua.)
+
+
+----------------------------------------------------------------
+MUC 3: PAGE ID + PAGE ACCESS TOKEN (quyen nhan tin thay Page)
+----------------------------------------------------------------
+Page ID cho bot biet nhan tin bang Page nao. Page Access Token la
+"chia khoa" de bot duoc phep gui tin nhan di. Token nay mat la
+phai tao lai, giu kin nhu mat khau.
+
+Cac buoc lay:
+  1. Trong App Dashboard -> phan Messenger (Use Case) -> muc
+     Access Tokens (hoac: Messenger -> Settings).
+  2. Bam Add hoac chon Fanpage cua ban trong danh sach.
+     Facebook se hoi cap quyen: chap nhan day du (pages_messaging,
+     pages_manage_metadata...). Ban phai la Admin cua Page.
+  3. Bam Generate Token -> copy chuoi dai bat dau bang EAA... 
+  4. Lay Page ID: vao Fanpage -> Gioi thieu (About), keo xuong
+     thay Page ID (day so). Hoac trong Business Suite -> Cai dat.
+  5. Mo file .env, dien 2 dong:
+       MESSENGER_PAGE_ACCESS_TOKEN=EAA...
+       MESSENGER_PAGE_ID=day-so-page-id
+  6. Luu file .env. Khoi dong lai Server.
+  7. Luu y: nick dang nhap Facebook de lay token phai GIU quyen
+     Admin Page. Mat quyen la token chet theo, phai tao lai.
+
+
+----------------------------------------------------------------
+MUC 4: DANG KY WEBHOOK + SUBSCRIBE (buoc quyet dinh)
+----------------------------------------------------------------
+  1. Trong App Dashboard -> Webhooks (hoac Messenger -> Webhooks)
+     -> Add Callback URL (hoac Edit).
+  2. Dien chinh xac:
+       Callback URL: https://hueless-nathaly-melodically.ngrok-free.dev/webhook/messenger
+       Verify Token: shop-verify-9X7mK2pQ5vT8wZ4n
+  3. Bam Verify and Save.
+     - Thanh cong: hien tich xanh. Xong buoc nay la Facebook da
+       noi duoc toi may ban.
+     - That bai: kiem tra 3 thu theo thu tu:
+       a) Server dang chay? Mo http://localhost:3000/health
+          phai thay status ok.
+       b) Ngrok dang chay? Mo link public /health tren dien thoai
+          (tat wifi, dung 4G) phai thay status ok.
+       c) Verify Token dan KHOP 100% voi .env (thua/thieu 1 ky tu
+          cung that bai).
+  4. Subscribe Page vao su kien: trong muc Webhooks vua them,
+     chon Page -> Add Subscriptions (hoac Manage) -> tich vao:
+       [x] messages
+       [x] messaging_postbacks
+     Bam Subscribe/Save.
+
+
+----------------------------------------------------------------
+MUC 5: TEST THAT (5 phut)
+----------------------------------------------------------------
+  1. Dung nick Facebook KHAC (nick phu, khong phai Admin Page)
+     nhan tin vao Fanpage: "shop co ao thun khong?"
+     (Admin Page tu nhan cho Page doi khi khong kich hoat bot.)
+  2. Doi 20-40 giay: bot tra loi la THANH CONG.
+  3. Neu khong thay tra loi, mo cua so Server (cua so den) xem:
+     - Khong co dong log moi nao: webhook chua toi -> xem lai Muc 4.
+     - Co log loi 401: sai App Secret -> xem lai Muc 2.
+     - Co log ma bot im lang: vao /admin -> Customers -> xem khach
+       co dang o che do "chuyen nguoi that" khong.
+  4. Vao /admin -> Customers: phai thay khach moi + lich su chat.
+     Vao /admin -> Products: sua ton kho thu 1 mon roi hoi bot lai
+     de thay bot cap nhat theo.
+
+
+----------------------------------------------------------------
+MUC 6: KHI NAO CAN LAM LAI
+----------------------------------------------------------------
+- Tat/mo may, tat ngrok: link DOI -> mo 4-Mo-Ngrok.bat lay link
+  moi -> vao Dashboard doi Callback URL (Muc 4 buoc 1-3).
+- Doi mat khau Facebook / mat quyen Admin Page: token chet ->
+  lam lai Muc 3.
+- Doi Verify Token trong .env: lam lai Muc 4 buoc 1-3.
+- Muon cong khai cho MOI NGUOI dung (hien tai chi nick trong
+  App/Page chat duoc): can App Review quyen pages_messaging +
+  xac minh doanh nghiep. Cu test on voi nick phu truoc.
+
+
+Chuc shop noi bot thanh cong!

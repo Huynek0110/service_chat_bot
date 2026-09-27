@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chi tiết khách hàng — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Khách hàng #<%= customer.id %> — <%= customer.display_name %></h1>
+<div class="table-wrap">
+<table class="table">
+  <tbody>
+    <tr><th>Kênh</th><td><%= customer.channel %></td></tr>
+    <tr><th>User ID</th><td><%= customer.external_user_id %></td></tr>
+    <tr><th>Tên hiển thị</th><td><%= customer.display_name %></td></tr>
+    <tr><th>Lần đầu thấy</th><td><%= customer.first_seen_at %></td></tr>
+    <tr><th>Lần cuối thấy</th><td><%= customer.last_seen_at %></td></tr>
+    <tr><th>Lead status</th><td><%= customer.lead_status %></td></tr>
+    <tr><th>Human handoff</th><td><span class="badge <%= customer.human_handoff ? 'badge-red' : 'badge-green' %>"><%= customer.human_handoff ? 'Bật (bot không trả lời)' : 'Tắt (bot trả lời)' %></span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Chuyển cho người trực (handoff)</h2>
+<form method="post" action="/admin/customers/<%= customer.id %>/handoff">
+  <button type="submit" class="btn btn-danger" name="action" value="on">Bật handoff</button>
+  <button type="submit" class="btn btn-primary" name="action" value="off">Tắt handoff</button>
+</form>
+
+<h2>Ghi chú &amp; trạng thái lead</h2>
+<form method="post" action="/admin/customers/<%= customer.id %>/notes">
+  <div class="form-group">
+    <label for="lead_status">Lead status</label>
+    <select id="lead_status" class="form-control" name="lead_status">
+      <% leadStatuses.forEach(function(s) { %>
+      <option value="<%= s %>" <% if (customer.lead_status === s) { %>selected<% } %>><%= s %></option>
+      <% }); %>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="notes">Ghi chú</label>
+    <textarea id="notes" class="form-control" name="notes"><%= customer.notes %></textarea>
+  </div>
+  <p><button type="submit" class="btn btn-primary">Lưu ghi chú</button></p>
+</form>
+
+<h2>50 tin nhắn gần nhất</h2>
+<div class="table-wrap">
+<table class="table">
+  <thead><tr><th>Vai trò</th><th>Nội dung</th><th>Thời gian</th></tr></thead>
+  <tbody>
+  <% if (messages.length === 0) { %>
+    <tr><td colspan="3" class="muted">Chưa có tin nhắn.</td></tr>
+  <% } %>
+  <% messages.forEach(function(m) { %>
+    <tr>
+      <td><%= m.role %></td>
+      <td><%= m.content %></td>
+      <td><%= m.created_at %></td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+<p><a class="btn" href="/admin/customers">Về danh sách</a></p>
+</main>
+</body>
+</html>

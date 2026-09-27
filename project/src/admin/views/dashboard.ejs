@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Dashboard</h1>
+<p class="muted">Tổng quan shop hôm nay — số liệu lấy trực tiếp từ database, cập nhật ngay khi bạn sửa bên dưới.</p>
+<div class="grid">
+  <div class="card card-hover stat">
+    <div class="stat-top">
+      <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M21 8.5 12 3.5 3 8.5v7L12 20.5l9-5v-7Z"></path><path d="M3 8.5 12 13.5l9-5"></path><path d="M12 13.5v7"></path></svg></span>
+      <span class="stat-label">Sản phẩm</span>
+    </div>
+    <div class="stat-num"><%= counts.products %></div>
+    <div class="stat-foot"><a class="btn btn-small" href="/admin/products">Quản lý</a></div>
+  </div>
+  <div class="card card-hover stat is-green">
+    <div class="stat-top">
+      <span class="stat-icon is-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M4 5.5h16v11H9.5L4 20.5v-15Z"></path><path d="M8.5 10.2a3.5 3.5 0 0 1 6.9.8c0 1.7-3.4 2-3.4 3.5"></path><path d="M12 17.6h.01"></path></svg></span>
+      <span class="stat-label">FAQs</span>
+    </div>
+    <div class="stat-num"><%= counts.faqs %></div>
+    <div class="stat-foot"><a class="btn btn-small" href="/admin/faqs">Quản lý</a></div>
+  </div>
+  <div class="card card-hover stat is-slate">
+    <div class="stat-top">
+      <span class="stat-icon is-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M16 19.5v-1.6a3.4 3.4 0 0 0-3.4-3.4H7.4A3.4 3.4 0 0 0 4 17.9v1.6"></path><circle cx="10" cy="8" r="3.2"></circle><path d="M20 19.5v-1.6a3.4 3.4 0 0 0-2.6-3.3"></path><path d="M15.6 5.2a3.2 3.2 0 0 1 0 5.6"></path></svg></span>
+      <span class="stat-label">Khách hàng</span>
+    </div>
+    <div class="stat-num"><%= counts.customers %></div>
+    <div class="stat-foot"><a class="btn btn-small" href="/admin/customers">Quản lý</a></div>
+  </div>
+  <div class="card card-hover stat is-slate">
+    <div class="stat-top">
+      <span class="stat-icon is-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M4 5.5h16v9H8l-4 3.5v-12.5Z"></path><path d="M8 9.5h8"></path><path d="M8 12h5"></path></svg></span>
+      <span class="stat-label">Tin nhắn</span>
+    </div>
+    <div class="stat-num"><%= counts.messages %></div>
+    <div class="stat-foot"><a class="btn btn-small" href="/admin/customers">Xem theo khách</a></div>
+  </div>
+  <div class="card card-hover stat is-amber">
+    <div class="stat-top">
+      <span class="stat-icon is-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><circle cx="9.5" cy="19.5" r="1.3"></circle><circle cx="17.5" cy="19.5" r="1.3"></circle><path d="M2.5 4h2.2l2.4 10.1a1.7 1.7 0 0 0 1.6 1.3h8.2a1.7 1.7 0 0 0 1.6-1.3L20.5 7.5H6"></path></svg></span>
+      <span class="stat-label">Chờ xác minh</span>
+    </div>
+    <div class="stat-num"><%= counts.pendingVerify %></div>
+    <div class="stat-foot"><a class="btn btn-small" href="/admin/orders?status=pending_verify">Duyệt đơn</a></div>
+  </div>
+</div>
+
+<p class="section-title">Việc nhanh</p>
+<div class="grid">
+  <div class="card card-hover">
+    <h3>Thêm mẫu thoại bot</h3>
+    <p class="muted">Dạy bot trả lời đúng giọng shop bằng câu hỏi / câu trả lời.</p>
+    <a class="btn btn-primary" href="/admin/faqs/new">+ Thêm FAQ</a>
+  </div>
+  <div class="card card-hover">
+    <h3>Cập nhật kho hàng</h3>
+    <p class="muted">Sửa giá hoặc tồn kho — bot nhận số mới ngay, không cần khởi động lại server.</p>
+    <a class="btn" href="/admin/products">Mở danh sách</a>
+  </div>
+  <div class="card card-hover">
+    <h3>Đổi giọng cho bot</h3>
+    <p class="muted">Chọn file prompt "active" để áp dụng ngay cho tin nhắn kế tiếp.</p>
+    <a class="btn" href="/admin/prompts">Quản lý prompts</a>
+  </div>
+</div>
+
+<p class="muted">Import/export CSV nằm ở từng mục Products / FAQs. Chưa rõ bắt đầu từ đâu? Xem <a href="/admin/huong-dan">hướng dẫn sử dụng</a>.</p>
+</main>
+</body>
+</html>

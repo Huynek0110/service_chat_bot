@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trợ lý AI — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Trợ lý AI</h1>
+<p class="muted">Model: <%= typeof chatModel !== 'undefined' ? chatModel : '' %> · Websearch mặc định: <%= (typeof webSearchOn !== 'undefined' && webSearchOn) ? 'bật' : 'tắt' %> (có thể chọn lại mỗi câu hỏi).</p>
+<style>
+  /* Page-local extras only. Every colour comes from the layout.ejs token set so the
+     agent screen themes and dark-modes with the rest of the admin. */
+  .agent-wrap { display: flex; gap: 14px; align-items: flex-start; }
+  .agent-sidebar { width: 264px; flex-shrink: 0; padding: 14px; }
+  .agent-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 16px; }
+  #new-chat { width: 100%; margin: 0 0 2px; }
+
+  #session-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 520px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .session-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  }
+  .session-item:hover { background: var(--surface-2); }
+  .session-item.active { border-color: var(--primary); background: var(--primary-soft); }
+  .session-title {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .session-time { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  /* Was referenced by both the server render and renderSessions() but had no rule
+     anywhere in the app, so the message counter rendered as bare text. */
+  .badge-count {
+    flex: 0 0 auto;
+    min-width: 22px;
+    padding: 0 7px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-3);
+    color: var(--text-soft);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 19px;
+    text-align: center;
+  }
+  .badge-count:empty { display: none; }
+  /* --primary-text on --surface, not white on --primary: the primary token is a
+     light indigo in dark mode, so white text on it would fail contrast. */
+  .session-item.active .badge-count { background: var(--primary-text); color: var(--surface); }
+
+  #messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 220px;
+    max-height: 520px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    scrollbar-width: thin;
+  }
+  .msg-user, .msg-admin, .msg-error {
+    max-width: 82%;
+    padding: 9px 13px;
+    border-radius: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 14px;
+    line-height: 1.55;
+    box-shadow: var(--shadow-sm);
+  }
+  .msg-user { align-self: flex-end; background: var(--bubble-user-bg); color: var(--bubble-user-text); border-bottom-right-radius: 4px; }
+  .msg-admin { align-self: flex-start; background: var(--bubble-ai-bg); color: var(--bubble-ai-text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .msg-error { align-self: center; max-width: 92%; background: var(--err-bg); color: var(--err-text); border: 1px solid var(--err-border); border-radius: var(--radius); }
+
+  /* The two option <label>s carry inline display/font-weight overrides, so style
+     the wrapper and the checkboxes instead - they are what actually need aligning. */
+  .agent-main p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 4px 0 10px;
+  }
+  .agent-main p label { align-items: center; gap: 6px; }
+  .agent-main p input[type=checkbox] {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--primary);
+  }
+  /* Input and send button on one line without touching the markup. */
+  #chat-form { display: flex; gap: 8px; align-items: stretch; }
+  #chat-form .form-control { flex: 1 1 auto; max-width: none; }
+  #chat-form .btn { margin: 0; }
+
+  /* The page already has a 258px app sidebar, so the session column has to go on
+     top of the chat before things get uncomfortably narrow. */
+  @media (max-width: 900px) {
+    .agent-wrap { flex-direction: column; }
+    .agent-sidebar { width: 100%; }
+    #session-list { max-height: 220px; }
+  }
+</style>
+<div class="agent-wrap">
+  <aside class="card agent-sidebar">
+    <button type="button" id="new-chat" class="btn btn-primary">+ Chat mới</button>
+    <div id="session-list">
+      <% const _sessions = (typeof sessions !== 'undefined' && Array.isArray(sessions)) ? sessions : []; %>
+      <% if (_sessions.length === 0) { %>
+        <span class="muted">Chưa có phiên chat.</span>
+      <% } %>
+      <% _sessions.forEach(function(s) { %>
+        <div class="session-item" data-id="<%= s.id %>">
+          <span class="session-title"><%= s.title %></span>
+          <span class="badge-count"><%= s.message_count %></span>
+          <span class="session-time"><%= s.updated_at %></span>
+        </div>
+      <% }); %>
+    </div>
+  </aside>
+  <section class="card agent-main">
+    <div id="alert" class="alert-error" style="display:none;"></div>
+    <div id="messages"></div>
+    <p>
+      <label style="display:inline;font-weight:normal;"><input type="checkbox" id="ws"> Websearch</label>
+      <label style="display:inline;font-weight:normal;margin-left:12px;"><input type="checkbox" id="think"> Thinking</label>
+    </p>
+    <form id="chat-form">
+      <input type="text" id="input" name="message" class="form-control" placeholder="VD: liệt kê sản phẩm, đặt tồn kho SKU-X về 10..." autocomplete="off">
+      <button type="submit" id="send" class="btn btn-primary">Gửi</button>
+    </form>
+  </section>
+</div>
+<script>
+(function () {
+  var listEl = document.getElementById('session-list');
+  var box = document.getElementById('messages');
+  var form = document.getElementById('chat-form');
+  var input = document.getElementById('input');
+  var sendBtn = document.getElementById('send');
+  var newBtn = document.getElementById('new-chat');
+  var wsEl = document.getElementById('ws');
+  var thinkEl = document.getElementById('think');
+  var alertEl = document.getElementById('alert');
+  var currentId = null;
+
+  function showError(msg) {
+    alertEl.textContent = msg || '';
+    alertEl.style.display = msg ? 'block' : 'none';
+  }
+
+  // All rendering uses textContent — never innerHTML — so user/AI text is escaped.
+  function bubble(role, text) {
+    var div = document.createElement('div');
+    if (role === 'user') {
+      div.className = 'msg-user';
+      div.textContent = 'Bạn: ' + text;
+    } else if (role === 'error') {
+      div.className = 'msg-error';
+      div.textContent = text;
+    } else {
+      div.className = 'msg-admin';
+      div.textContent = 'Trợ lý: ' + text;
+    }
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderSessions(sessions) {
+    listEl.textContent = '';
+    if (!sessions || sessions.length === 0) {
+      var empty = document.createElement('span');
+      empty.className = 'muted';
+      empty.textContent = 'Chưa có phiên chat.';
+      listEl.appendChild(empty);
+      return;
+    }
+    sessions.forEach(function (s) {
+      var item = document.createElement('div');
+      item.className = 'session-item' + (s.id === currentId ? ' active' : '');
+
+      var titleBtn = document.createElement('button');
+      titleBtn.type = 'button';
+      titleBtn.className = 'session-title';
+      titleBtn.textContent = s.title || ('Phiên #' + s.id);
+      titleBtn.title = s.title || ('Phiên #' + s.id);
+      titleBtn.addEventListener('click', function () { selectSession(s.id); });
+
+      var count = document.createElement('span');
+      count.className = 'badge-count';
+      count.textContent = (s.message_count === undefined || s.message_count === null) ? '' : String(s.message_count);
+
+      var time = document.createElement('span');
+      time.className = 'session-time';
+      time.textContent = s.updated_at || '';
+
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn btn-small btn-danger';
+      del.textContent = '×';
+      del.title = 'Xóa phiên chat';
+      del.addEventListener('click', function (e) {
+        e.stopPropagation();
+        deleteSession(s.id);
+      });
+
+      item.appendChild(titleBtn);
+      item.appendChild(count);
+      item.appendChild(time);
+      item.appendChild(del);
+      listEl.appendChild(item);
+    });
+  }
+
+  function loadSessions(selectFirst) {
+    return fetch('/admin/agent/sessions', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          if (!r.ok) throw new Error((data && data.error) || ('Lỗi ' + r.status));
+          return data;
+        });
+      })
+      .then(function (sessions) {
+        if (selectFirst && !currentId && sessions && sessions.length > 0) {
+          currentId = sessions[0].id;
+        }
+        renderSessions(sessions);
+        return sessions;
+      })
+      .catch(function (err) {
+        showError(err.message);
+        return [];
+      });
+  }
+
+  function selectSession(id) {
+    currentId = id;
+    showError('');
+    box.textContent = '';
+    loadSessions(false);
+    fetch('/admin/agent/sessions/' + encodeURIComponent(id) + '/messages', {
+      headers: { 'Accept': 'application/json' }
+    }).then(function (r) {
+      return r.json().then(function (data) {
+        if (!r.ok) throw new Error((data && data.error) || ('Lỗi ' + r.status));
+        return data;
+      });
+    }).then(function (messages) {
+      box.textContent = '';
+      (messages || []).forEach(function (m) {
+        bubble(m.role === 'user' ? 'user' : 'admin', m.content || '');
+      });
+    }).catch(function (err) {
+      bubble('error', err.message);
+    });
+  }
+
+  function createSession() {
+    showError('');
+    return fetch('/admin/agent/sessions', { method: 'POST' })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          if (!r.ok) throw new Error((data && data.error) || ('Lỗi ' + r.status));
+          return data;
+        });
+      })
+      .then(function (data) {
+        currentId = data.id;
+        box.textContent = '';
+        return loadSessions(false);
+      })
+      .catch(function (err) {
+        showError(err.message);
+      });
+  }
+
+  function deleteSession(id) {
+    showError('');
+    fetch('/admin/agent/sessions/' + encodeURIComponent(id), { method: 'DELETE' })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          if (!r.ok) throw new Error((data && data.error) || ('Lỗi ' + r.status));
+          return data;
+        });
+      })
+      .then(function () {
+        if (currentId === id) {
+          currentId = null;
+          box.textContent = '';
+        }
+        return loadSessions(true);
+      })
+      .catch(function (err) {
+        showError(err.message);
+      });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var message = input.value.trim();
+    if (!message) return;
+    showError('');
+    bubble('user', message);
+    input.value = '';
+    sendBtn.disabled = true;
+
+    // Auto-create a session on first send, then chat with its id.
+    var ready = currentId
+      ? Promise.resolve(currentId)
+      : fetch('/admin/agent/sessions', { method: 'POST' }).then(function (r) {
+          return r.json().then(function (data) {
+            if (!r.ok) throw new Error((data && data.error) || ('Lỗi ' + r.status));
+            return data;
+          });
+        }).then(function (data) {
+          currentId = data.id;
+          return currentId;
+        });
+
+    ready.then(function (sid) {
+      return fetch('/admin/agent/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: message,
+          sessionId: sid,
+          useWebSearch: wsEl.checked,
+          useThinking: thinkEl.checked
+        })
+      }).then(function (r) {
+        return r.json().then(function (data) {
+          if (!r.ok) throw new Error((data && data.error) || ('Lỗi ' + r.status));
+          return data;
+        });
+      });
+    }).then(function (data) {
+      // Adopt the authoritative sessionId (covers brain auto-create path too).
+      if (data && data.sessionId && data.sessionId !== currentId) {
+        currentId = data.sessionId;
+      }
+      bubble('admin', (data && data.reply) || '(không có trả lời)');
+      return loadSessions(false);
+    }).catch(function (err) {
+      bubble('error', err.message);
+    }).finally(function () {
+      sendBtn.disabled = false;
+      input.focus();
+    });
+  });
+
+  newBtn.addEventListener('click', createSession);
+
+  // Enter in the text input submits the form (native); keep focus ready.
+  loadSessions(true).then(function (sessions) {
+    if (currentId) selectSession(currentId);
+  });
+})();
+</script>
+</main>
+</body>
+</html>

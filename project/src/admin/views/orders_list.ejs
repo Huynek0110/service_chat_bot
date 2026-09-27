@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đơn hàng — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Đơn hàng <% if (pendingCount > 0) { %><span class="badge badge-red"><%= pendingCount %> chờ xác minh</span><% } %></h1>
+
+<% if (result && result.ok) { %>
+<div class="alert-ok">
+  <strong>Đã giao đơn <%= result.orderCode %></strong> — còn lại <%= result.remaining %> acc trong kho.<br>
+  Dòng acc đã giao:<br>
+  <code style="display:block;background:#fff;padding:8px;margin:6px 0;word-break:break-all;"><%= result.line %></code>
+  <span class="muted"><%= result.sendStatus %></span>
+</div>
+<% } %>
+<% if (result && !result.ok) { %>
+<div class="alert-error"><%= result.error %></div>
+<% } %>
+
+<p>
+  <a href="/admin/orders?status=all">Tất cả</a>
+  <% statuses.forEach(function(s) { %>
+    | <a href="/admin/orders?status=<%= s %>" <% if (status === s) { %>style="font-weight:bold"<% } %>><%= s %></a>
+  <% }); %>
+</p>
+
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr><th>Mã đơn</th><th>Người mua</th><th>Sản phẩm</th><th>Giá</th><th>Trạng thái</th><th>Tạo lúc</th><th>Thao tác</th></tr>
+  </thead>
+  <tbody>
+  <% if (orders.length === 0) { %>
+    <tr><td colspan="7" class="muted">Chưa có đơn nào.</td></tr>
+  <% } %>
+  <% orders.forEach(function(o) { %>
+    <tr <% if (o.status === 'pending_verify') { %>style="background:#fef9c3"<% } %>>
+      <td><%= o.order_code %></td>
+      <td><%= o.channel %>:<%= o.external_user_id %></td>
+      <td><%= o.product_name || ('#' + o.product_id) %></td>
+      <td><%= o.price %></td>
+      <td><span class="badge <%= o.status === 'pending_verify' ? 'badge-yellow' : (o.status === 'delivered' ? 'badge-green' : (o.status === 'cancelled' ? 'badge-red' : 'badge-gray')) %>"><%= o.status %></span></td>
+      <td><%= o.created_at %></td>
+      <td>
+        <% if (o.status !== 'delivered' && o.status !== 'cancelled') { %>
+        <form method="post" action="/admin/orders/<%= o.id %>/deliver" style="display:inline" onsubmit="return confirm('Xác minh & giao 1 acc cho đơn <%= o.order_code %>?')">
+          <button type="submit" class="btn btn-small btn-primary">Giao hàng</button>
+        </form>
+        <form method="post" action="/admin/orders/<%= o.id %>/cancel" style="display:inline" onsubmit="return confirm('Hủy đơn <%= o.order_code %>?')">
+          <button type="submit" class="btn btn-small btn-danger">Hủy</button>
+        </form>
+        <% } else { %>
+        <span class="muted">—</span>
+        <% } %>
+      </td>
+    </tr>
+  <% }); %>
+  </tbody>
+</table>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng dẫn sử dụng — Admin</title>
+</head>
+<body>
+<%- include('layout') %>
+<main>
+<h1>Hướng dẫn sử dụng (dành cho người không biết code)</h1>
+
+<h2>1. Products — Quản lý hàng hóa</h2>
+<p><b>Tác dụng:</b> đây là "trí nhớ" của bot về shop. Bot chỉ tư vấn đúng khi hàng ở đây đúng.</p>
+<ul>
+  <li><b>Thêm/sửa:</b> bấm Thêm mới / Sửa, điền tên, mô tả, <b>giá (chỉ gõ số)</b>, <b>tồn kho</b>, danh mục, mã SKU (không trùng). Hết hàng thì sửa tồn kho về 0, đừng xóa.</li>
+  <li><b>Import hàng loạt:</b> soạn Excel đúng thứ tự cột <code>sku | name | description | price | stock_quantity | category | image_url | is_active</code>, lưu CSV, copy toàn bộ dán vào ô Import. Export để tải ra sửa rồi nhập lại.</li>
+  <li>Lưu xong bot biết ngay, <b>không cần khởi động lại</b> (tự học lại kiến thức).</li>
+</ul>
+
+<h2>2. FAQs — Câu hỏi thường gặp</h2>
+<p><b>Tác dụng:</b> dạy bot trả lời chính sách shop: đổi trả, ship, COD, chọn size...</p>
+<ul>
+  <li>Mỗi dòng 1 cặp câu hỏi + câu trả lời. Viết đúng giọng shop muốn bot nói.</li>
+  <li>Cũng có Import/Export CSV (cột <code>question | answer</code>).</li>
+</ul>
+
+<h2>3. Prompts — Giọng văn, kịch bản của bot</h2>
+<p><b>Tác dụng:</b> quyết định bot xưng hô, tư vấn kiểu nào. File đang dùng (active) có dấu hiệu riêng.</p>
+<ul>
+  <li><b>Sửa:</b> bấm vào file → sửa nội dung → Lưu. Tin nhắn tiếp theo của khách dùng giọng mới ngay.</li>
+  <li><b>Đổi kịch bản:</b> bấm "Đặt active" ở file muốn dùng, không cần khởi động lại.</li>
+  <li><b>Tạo mới:</b> tên file chỉ gồm chữ/số/gạch (vd <code>tet.md</code>), viết nội dung rồi đặt active.</li>
+  <li>Cẩn thận: đừng xóa file đang active.</li>
+</ul>
+
+<h2>4. Customers — Khách hàng</h2>
+<p><b>Tác dụng:</b> xem ai đã chat gì, trạng thái quan tâm (lead), và tiếp quản khi cần.</p>
+<ul>
+  <li>Bấm vào từng khách để xem lịch sử chat.</li>
+  <li><b>Chuyển người thật:</b> khi khách đòi gặp nhân viên, bot tự bật chế độ im lặng. Bạn chat tay với khách trên Telegram/Fanpage. Muốn bot trả lời lại: bấm <b>Resume AI (tắt handoff)</b>.</li>
+  <li><b>Lead status:</b> new (mới) → interested (quan tâm) → qualified (chốt) → customer (đã mua) / closed (đóng). Ghi chú thêm ở ô notes.</li>
+</ul>
+
+<h2>5. Tìm kiếm internet (web_search)</h2>
+<p>Trạng thái hiện tại: <span class="badge <%= webSearchOn ? 'badge-green' : 'badge-gray' %>"><%= webSearchOn ? 'ĐANG BẬT' : 'ĐANG TẮT' %></span> · Model chat: <b><%= chatModel %></b></p>
+<p><b>Tác dụng:</b> cho bot trả lời câu hỏi ngoài shop (thời tiết, tin tức, kiến thức chung).</p>
+<ul>
+  <li>Bot chỉ gọi khi thật sự cần; <b>giá/tồn kho/chính sách luôn lấy từ database</b>, web không bao giờ ghi đè.</li>
+  <li>Bật/tắt: mở file <code>.env</code>, sửa <code>ENABLE_WEB_SEARCH=true/false</code>, khởi động lại Server. Key nằm ở <code>WEB_SEARCH_API_KEY</code>.</li>
+  <li>Bản miễn phí giới hạn lượt/tháng — tắt nếu khách chỉ hỏi hàng hóa.</li>
+</ul>
+
+<h2>6. Sao lưu</h2>
+<p>Chạy file <code>Sao-Luu-Du-Lieu.bat</code> mỗi tuần. Muốn phục hồi: <b>tắt server</b>, copy file backup đè lên <code>data\app.db</code>.</p>
+</main>
+</body>
+</html>
