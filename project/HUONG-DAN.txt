@@ -10,9 +10,9 @@ project sang (giua nguyen file .env + data/app.db thi mo la chay
 ngay). Neu thieu thu gi, file 2-Khoi-Dong-Server.bat se TU LO:
 tu tao .env, tu cai thu vien, tu dung database + hang mau lan dau
 (can bat LM Studio truoc). LM Studio + ngrok thi dung file
-0-Cai-Dat-Ollama-Model.bat muc 1 va 4 (da test chay that).
+0-Cai-Dat-LM-Studio-Model.bat muc 1 va 4 (da test chay that).
 
-File "0-Cai-Dat-Ollama-Model.bat": huong dan LM Studio + model neu
+File "0-Cai-Dat-LM-Studio-Model.bat": huong dan LM Studio + model neu
 doi may moi. Cach dung:
   - Muc [1]: load model chat google/gemma-3-1b trong LM
     Studio (mo LM Studio -> tim model -> Download -> Load ->
@@ -82,7 +82,7 @@ thi bot moi tu van dung.
 LUU Y VE RAG: mac dinh RAG TAT, bot doc hang/gia/ton kho truc tiep
 tu database nen van dung. Phan "tu tra cuu van ban san pham/FAQ"
 chi hoat dong khi ban BAT RAG (xem muc [3] cua file
-0-Cai-Dat-Ollama-Model.bat). Neu bat RAG, sau khi them/sua hang
+0-Cai-Dat-LM-Studio-Model.bat). Neu bat RAG, sau khi them/sua hang
 nho chay lai lenh nap lai kien thuc, neu khong bot van dung duoc
 nhung se it biet them ve san pham moi.
 
@@ -170,7 +170,7 @@ Buoc 3 - Dien vao file .env:
        ADMIN_PASSWORD=mat-khau-moi-cua-ban
 
 Buoc 4 - Tao duong dan HTTPS tam (vi Facebook bat buoc HTTPS):
-  1. Mo file "0-Cai-Dat-Ollama-Model.bat" -> chon muc [4] Ngrok.
+  1. Mo file "0-Cai-Dat-LM-Studio-Model.bat" -> chon muc [4] Ngrok.
      No tu cai ngrok, roi hoi authtoken.
   2. Lay authtoken MIEN PHI: vao ngrok.com dang ky -> Dashboard
      -> Your Authtoken -> copy -> dan vao cua so den -> Enter.
@@ -234,7 +234,7 @@ PHAN 7: SU CO THUONG GAP
       http://localhost:1234/v1/models
 
 1b. Bot tra loi duoc nhung bao loi 404 / khong thay model:
-   -> Chay nhanh file "0-Cai-Dat-Ollama-Model.bat" -> muc [2].
+   -> Chay nhanh file "0-Cai-Dat-LM-Studio-Model.bat" -> muc [2].
       No se bao ngay "Server chua chay" hay "Model chua Load".
    -> Cach 1: Mo LM Studio, tim "google/gemma-3-1b", bam Download
       roi bam "Load" (BAY phai Load, moi Download thi chua duoc).
@@ -246,7 +246,7 @@ PHAN 7: SU CO THUONG GAP
 
 1c. Bot tra loi dung nhung "it biet" ve san pham moi:
    -> RAG dang TAT (mac dinh). Bot van dung, dung tra cu them.
-      Muon bat RAG xem muc [3] cua file 0-Cai-Dat-Ollama-Model.bat.
+      Muon bat RAG xem muc [3] cua file 0-Cai-Dat-LM-Studio-Model.bat.
 
 1b2. Bot CHAT duoc nhung lenh "tim san pham / dat hang / kiem tra ton kho"
     lai khong chay, hoac bot toan tra loi van ban:

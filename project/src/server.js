@@ -330,8 +330,9 @@ app.get('/health', async (req, res) => {
 
 // Root
 app.get('/', (req, res) => {
-  res.json({ 
-    name: 'Messenger Chatbot', 
+  res.json({
+    name: 'Chatbot Ban Hang',
+    channels: ['telegram', 'messenger'],
     version: '1.0.0',
     status: 'running'
   });

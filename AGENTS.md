@@ -66,7 +66,11 @@ project/.env.example                committed template
 4. **All user-facing copy is Vietnamese.**
 5. **Do not add runtime dependencies** without explicit owner approval. Use Node's
    built-in `fetch` and `node:crypto` (see M1 for why this matters).
-6. **Do not delete or rename `.bat` launchers** — repurpose them (see M1.6).
+6. **Do not delete the `.bat` launchers** — repurpose them (see M1.6). Renaming is
+   allowed and expected when the old name names something the project no longer uses:
+   the Ollama launchers were renamed to `0-Cai-Dat-LM-Studio-Model.bat` /
+   `1-Kiem-Tra-LM-Studio.bat`, and every reference updated in the same commit. Leaving
+   a dead provider in a filename is a bug, not nostalgia.
 7. Preserve the existing defensive coding style: input validation, `capStr` limits,
    path-traversal guards, `escapeLike`, allow-lists, same-origin CSRF check on POST.
 
@@ -214,16 +218,25 @@ Therefore:
 
 | File | New behaviour |
 |------|---------------|
-| `0-Cai-Dat-Ollama-Model.bat` | The installer menu. **Reads `LMSTUDIO_CHAT_MODEL` out of `.env` at runtime** (fallback `google/gemma-3-1b`) so the script can never drift from the real config. Menu: `[1]` how to load the chat model · `[2]` **verify the model is actually LOADed** (greps `/v1/models`, then fires a throwaway chat completion) · `[3]` RAG on/off · `[4]` ngrok · `[5]` list served models. No `winget install Ollama`, no `ollama pull`. |
-| `1-Khoi-Dong-Ollama.bat` | Two-stage check: HTTP `200` on `http://localhost:1234/v1/models` **and** the pinned model present in the served list. Distinguishes "server not running" from "model downloaded but not LOADed" — the single most common failure. Opens the LM Studio download page when down. |
+| `0-Cai-Dat-LM-Studio-Model.bat` | The installer menu. **Reads `LMSTUDIO_CHAT_MODEL` out of `.env` at runtime** (fallback `google/gemma-3-1b`) so the script can never drift from the real config. Menu: `[1]` how to load the chat model · `[2]` **verify the model is actually LOADed** (greps `/v1/models`, then fires a throwaway chat completion) · `[3]` RAG on/off · `[4]` ngrok · `[5]` list served models. No `winget install Ollama`, no `ollama pull`. |
+| `1-Kiem-Tra-LM-Studio.bat` | Two-stage check: HTTP `200` on `http://localhost:1234/v1/models` **and** the pinned model present in the served list. Distinguishes "server not running" from "model downloaded but not LOADed" — the single most common failure. Opens the LM Studio download page when down. |
 | `2-Khoi-Dong-Server.bat:24-33` | Probe `http://localhost:1234/v1/models` instead of `http://localhost:11434/api/tags`. |
 | `Khoi-Dong-Tat-Ca.bat:4-6` | Update the launcher chain and any waits/messages mentioning Ollama. |
 | `4-Mo-Ngrok.bat:7` | Update the reference to the renamed install script. |
 | `3-Chat-Thu.bat`, `Sao-Luu-Du-Lieu.bat` | Update only if they mention Ollama. |
 
-**The launcher filenames still contain the word `Ollama`.** That is deliberate: hard
-rule §1.3.6 forbids renaming them, and owners have muscle memory for
-`0-Cai-Dat-Ollama-Model.bat` / `1-Khoi-Dong-Ollama.bat`. Contents are LM Studio only.
+The launchers were **renamed** off Ollama: `0-Cai-Dat-LM-Studio-Model.bat` and
+`1-Kiem-Tra-LM-Studio.bat`. Note the second one is named *Kiem-Tra* (check), not
+*Khoi-Dong* (start), because it genuinely cannot start LM Studio — LM Studio is a GUI
+app the owner launches by hand, so the script's only honest job is to verify and
+explain.
+
+**cmd.exe gotcha that has already bitten this repo twice — respect it when editing
+`.bat`:** inside an `if ( ... )` or `for ( ... )` block, an unescaped `)` in an `echo`
+aborts the script with `. was unexpected at this time.` Parentheses are safe at label
+level but not inside a block. Prefer `goto` labels over `if ( ... )` blocks for anything
+that prints more than one line. Separately, `del` resets `%errorlevel%` to `0`, so
+capture a `findstr` result into a variable *before* deleting the file it read.
 
 Keep the existing `.bat` house style: `chcp 65001`, `title`, Vietnamese `echo` messages,
 `pause`. Scripts are written **unaccented** (ASCII) on purpose — `chcp 65001` plus
@@ -231,7 +244,7 @@ non-ASCII in `.bat` files is a reliable source of mojibake on Vietnamese Windows
 
 ### 3.8 Docs
 
-Update `project/README.md`, `project/HUONG-DAN.txt`, `project/HUONG-DAN-MESSENGER.txt`
+Update the root `README.md`, `project/HUONG-DAN.txt`, `project/HUONG-DAN-MESSENGER.txt`
 — every mention of Ollama, port 11434, `ollama pull`, `qwen3.5:9b`, `bge-m3` becomes
 LM Studio, port 1234, `google/gemma-3-1b`, and the RAG caveat from 3.6.
 Docs must also carry the 1B tool-calling caveat from §3.5, and the login page must be

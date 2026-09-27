@@ -4,7 +4,7 @@ title Ngrok Tunnel (Messenger Webhook)
 cd /d %~dp0
 where ngrok >nul 2>&1
 if errorlevel 1 (
-  echo Chua thay ngrok. Chay file 0-Cai-Dat-Ollama-Model.bat muc [4] de cai.
+  echo Chua thay ngrok. Chay file 0-Cai-Dat-LM-Studio-Model.bat muc [4] de cai.
   echo Mo PowerShell chay: winget install -e --id Ngrok.Ngrok
   echo Hoac tai tay tai: https://ngrok.com/download
   pause

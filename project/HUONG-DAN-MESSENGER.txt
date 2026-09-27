@@ -4,11 +4,11 @@ HUONG DAN NOI BOT VAO FANPAGE - 4 CAI MA + VERIFY WEBHOOK
 Tinh trang hien tai (ngay tao file):
 - Server + LM Studio + ngrok DANG CHAY tren may ban.
 - Link public tam thoi:
-    https://hueless-nathaly-melodically.ngrok-free.dev
+    https://<link>.ngrok-free.app
 - Link dang ky webhook (Callback URL), copy nguyen dong nay:
-    https://hueless-nathaly-melodically.ngrok-free.dev/webhook/messenger
-- Verify Token (da dien san trong file .env):
-    shop-verify-9X7mK2pQ5vT8wZ4n
+    https://<link>.ngrok-free.app/webhook/messenger
+- Verify Token (xem trong file .env, dong MESSENGER_VERIFY_TOKEN):
+    <VERIFY_TOKEN_CUA_BAN>
 - Da test: Meta goi GET verify se duoc dap dung, sai token bi 403.
 
 CHU Y QUAN TRONG: link ngrok MIEN PHI doi moi lan tat/mo lai.
@@ -23,7 +23,7 @@ MUC 1: VERIFY TOKEN (da xong 90% - chi can copy)
 Verify Token la mat khau rieng de Facebook chac rang URL webhook
 la cua ban, khong phai cua ke gia mao.
 
-- Ma hien tai:  shop-verify-9X7mK2pQ5vT8wZ4n
+- Ma hien tai:  <VERIFY_TOKEN_CUA_BAN>
   (da nam trong file .env dong MESSENGER_VERIFY_TOKEN)
 - Khi Facebook hoi "Verify Token", dan NGUYEN chuoi tren vao.
 - Muon tu dat chuoi khac: mo file .env bang Notepad, sua dong
@@ -81,8 +81,8 @@ MUC 4: DANG KY WEBHOOK + SUBSCRIBE (buoc quyet dinh)
   1. Trong App Dashboard -> Webhooks (hoac Messenger -> Webhooks)
      -> Add Callback URL (hoac Edit).
   2. Dien chinh xac:
-       Callback URL: https://hueless-nathaly-melodically.ngrok-free.dev/webhook/messenger
-       Verify Token: shop-verify-9X7mK2pQ5vT8wZ4n
+       Callback URL: https://<link>.ngrok-free.app/webhook/messenger
+       Verify Token: <VERIFY_TOKEN_CUA_BAN>
   3. Bam Verify and Save.
      - Thanh cong: hien tich xanh. Xong buoc nay la Facebook da
        noi duoc toi may ban.
