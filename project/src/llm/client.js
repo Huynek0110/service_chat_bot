@@ -222,6 +222,54 @@ function applyThinkHint(messages, think) {
   return [{ role: 'system', content: THINK_HINT }];
 }
 
+// Gemma-family chat templates hard-fail on anything but strict user/assistant
+// alternation: the template itself calls raise_exception("Conversation roles
+// must alternate...") and the server answers HTTP 400. That is not hypothetical
+// here — duplicate consecutive rows in `conversations` (a retried or
+// double-saved inbound message) are enough to brick the bot, because
+// getHistory() replays them verbatim.
+//
+// So the wire format is normalised here, in the adapter, rather than in each
+// agent loop: everything that reaches the model has already been made legal.
+// This is also the single place that knows about template quirks, so a future
+// model swap does not require touching the agent loops again.
+function normalizeMessages(messages) {
+  const list = Array.isArray(messages) ? messages.filter(Boolean) : [];
+
+  const out = [];
+  for (const m of list) {
+    const role = m.role;
+    const content = typeof m.content === 'string' ? m.content : m.content == null ? '' : String(m.content);
+
+    // Drop empties: a blank turn breaks alternation just as badly as a duplicate.
+    if (content.trim() === '' && !Array.isArray(m.tool_calls)) continue;
+
+    // Leading assistant turn (or a system message after the first turn) has no
+    // user question to belong to — strict templates reject it.
+    if (role === 'assistant' && !out.some((x) => x.role === 'user')) continue;
+
+    const prev = out[out.length - 1];
+    if (prev && prev.role === role && role !== 'tool') {
+      // Merge consecutive same-role turns rather than dropping either half: the
+      // model needs to see both, the template just cannot see them separately.
+      prev.content = `${prev.content}\n\n${content}`;
+      continue;
+    }
+    out.push({ ...m, content });
+  }
+
+  // Consecutive tool results are a legal OpenAI shape but still illegal for a
+  // strict template, which only knows user/assistant. Collapse the run.
+  for (let i = out.length - 1; i > 0; i--) {
+    if (out[i].role === 'tool' && out[i - 1].role === 'tool') {
+      out[i - 1].content = `${out[i - 1].content}\n\n${out[i].content}`;
+      out.splice(i, 1);
+    }
+  }
+
+  return out;
+}
+
 /**
  * One chat round trip against the pinned local chat model.
  * @returns {Promise<{content: string, toolCalls: Array<{id: string, name: string, arguments: object}>, raw: object}>}
@@ -229,7 +277,7 @@ function applyThinkHint(messages, think) {
 export async function chatCompletion({ messages, tools, temperature, maxTokens, think } = {}) {
   const body = {
     model: config.lmStudioChatModel,
-    messages: applyThinkHint(messages, think),
+    messages: normalizeMessages(applyThinkHint(messages, think)),
     stream: false,
   };
 

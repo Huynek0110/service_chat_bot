@@ -196,6 +196,43 @@ order: (1) enable RAG so product context is injected as a system message instead
 fetched via a tool; (2) raise `LMSTUDIO_CHAT_MODEL` to a larger model. Never "fix"
 this by tightening the tool loop — a plain-text answer is a valid answer.
 
+### 3.5b Chat-template constraints (hard-won, do not regress)
+
+Gemma-family chat templates are far stricter than the OpenAI spec, and they fail by
+**returning HTTP 400**, not by degrading:
+
+* **Strict role alternation.** The template itself calls
+  `raise_exception("Conversation roles must alternate user/assistant/...")`.
+  Two consecutive `user` turns, a leading `assistant` turn, an empty turn, or a
+  trailing `system` turn all produce a 400 that bricks the bot for that customer.
+  This is not hypothetical: duplicate consecutive rows in `conversations` (a
+  retried or double-saved inbound message) are enough, because `getHistory()`
+  replays them verbatim.
+  → `normalizeMessages()` in `src/llm/client.js` fixes this **in the adapter**, so
+  both agent loops benefit and a future model swap needs no change. It merges
+  consecutive same-role turns, drops empties, and collapses a run of `tool`
+  results. Keep every path to the model going through it.
+* **`tools` is accepted** on this runtime (verified against a live
+  `/v1/chat/completions`), so tool calling still works — just unreliably, per the
+  1B caveat above.
+
+### 3.5c Rendering model output (Markdown → the channel's format)
+
+The model writes Markdown by habit. Every channel must translate it, or customers
+see literal `**Tồn kho:**`:
+
+* **Telegram** (`src/channels/telegram.js`): `mdToTelegramHtml()` maps `**b**`,
+  `_i_`/`*i*`, `` `code` `` and fenced blocks, flattens Markdown tables into
+  `a  ·  b` lines, and HTML-escapes everything **first** so a `<` in a product
+  name cannot break the parse. Sends with `parse_mode: 'HTML'` and falls back to
+  plain text if Telegram rejects the message — a malformed reply must never be
+  silently dropped.
+* **Admin AI chat** (`src/admin/views/agent.ejs`): `fillBubble()` /
+  `inlineNodes()` build real `strong` / `em` / `code` elements via
+  `createElement` + `textContent`. **No `innerHTML`** — see §1.1. Escaping first
+  would have made `innerHTML` safe, but the DOM route keeps the rule absolute.
+* A new channel must do the same. Sending raw model text is a bug, not a shortcut.
+
 ### 3.6 Graceful RAG degradation (required)
 
 `google/gemma-3-1b` is a **chat** model, not an embedding model. The user may
@@ -215,6 +252,16 @@ Therefore:
 * Log the degradation **once per process** (or rate-limited), not on every message.
 
 ### 3.7 Launchers (`.bat`) — repurpose, never delete
+
+**The local runtime on port 1234 is not necessarily LM Studio.** It is
+`Bionic.exe` on the owner's machine, which serves the same OpenAI-compatible
+`/v1` surface with the same model ids. Every script only probes
+`http://localhost:1234/v1/models`, so they work for both — but any message that
+tells the owner to "open LM Studio / download the model" is wrong for a Bionic
+user. Keep such wording conditional ("máy chạy LM Studio hoặc server OpenAI
+tương thích khác"), or state the assumption instead of asserting one product.
+`Bionic.exe` also already serves `text-embedding-nomic-embed-text-v1.5`, so RAG
+can be enabled with **zero downloads** on that setup.
 
 | File | New behaviour |
 |------|---------------|

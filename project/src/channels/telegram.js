@@ -186,15 +186,102 @@ export function getTelegramBot() {
   return bot;
 }
 
+// The model writes Markdown by habit (`**bold**`, `_italic_`, ```code```), but
+// Telegram only renders a small HTML subset and silently prints anything else
+// verbatim — which is how customers ended up seeing literal `**Tồn kho:**`.
+// Translate the handful of markers the model actually emits, and HTML-escape
+// everything else first so a stray `<` in a product name cannot break the parse.
+//
+// Markdown tables are not supported by Telegram at all. They get flattened into
+// aligned monospace lines, which is far more readable than raw pipes.
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderTableRow(line) {
+  return line
+    .replace(/^\s*\|/, '')
+    .replace(/\|\s*$/, '')
+    .split('|')
+    .map((c) => c.trim())
+    .filter((c) => c !== '')
+    .join('  ·  ');
+}
+
+function mdToTelegramHtml(text) {
+  const lines = String(text).split('\n');
+  const out = [];
+  let inCode = false;
+  let inTable = false;
+
+  for (const raw of lines) {
+    const line = raw.replace(/\r$/, '');
+    const fence = line.match(/^\s*```/);
+
+    if (fence) {
+      out.push(inCode ? '</code>' : '<code>');
+      inCode = !inCode;
+      inTable = false;
+      continue;
+    }
+    if (inCode) {
+      out.push(escapeHtml(line));
+      continue;
+    }
+
+    // A table row is a line that is mostly pipes; the separator row (|---|---|
+    // or |:--:|) is dropped because it carries no information.
+    const isPipeHeavy = (line.match(/\|/g) || []).length >= 2;
+    if (isPipeHeavy) {
+      if (/^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(line)) continue; // separator
+      out.push(renderTableRow(line));
+      inTable = true;
+      continue;
+    }
+    if (inTable && line.trim() === '') {
+      inTable = false;
+    }
+
+    let html = escapeHtml(line);
+
+    // Inline code first so ** inside a code span is left alone.
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Bold, then italic. Handles the ***bold italic*** overlap by processing
+    // bold first and letting the leftover asterisks fall through to italic.
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+    html = html.replace(/(^|[\s(])\*([^*\n]+)\*(?=$|[\s).,!?:;])/g, '$1<i>$2</i>');
+    html = html.replace(/(^|[\s(])_([^_\n]+)_(?=$|[\s).,!?:;])/g, '$1<i>$2</i>');
+    // Bullets: the model prefers • and -, Telegram renders a real list only for
+    // a leading emoji, so normalise to a bullet char.
+    html = html.replace(/^(\s*)[-*]\s+/, '$1• ');
+
+    out.push(html);
+  }
+
+  if (inCode) out.push('</code>');
+  return out.join('\n');
+}
+
 // Sends via bot.telegram directly (not ctx.reply) so the reply still goes
 // out even if the Telegraf handler already timed out on a slow model.
 // Telegram message limit is 4096 chars; Array.from chunks by code point
 // so emoji/surrogate pairs survive the split.
 async function sendLongReply(chatId, text) {
   if (!bot) throw new Error('Telegram bot not started');
-  const out = Array.from(String(text));
+  const html = mdToTelegramHtml(text);
+  const out = Array.from(html);
   for (let i = 0; i < out.length; i += 4000) {
-    await bot.telegram.sendMessage(chatId, out.slice(i, i + 4000).join(''));
+    const chunk = out.slice(i, i + 4000).join('');
+    try {
+      await bot.telegram.sendMessage(chatId, chunk, { parse_mode: 'HTML' });
+    } catch (err) {
+      // Telegram rejects the whole message on unbalanced tags. Rather than lose
+      // the reply, fall back to escaped plain text — ugly but never silent.
+      logger.error('telegram HTML send failed, falling back to plain text', {
+        error: err && err.message,
+      });
+      await bot.telegram.sendMessage(chatId, String(text));
+    }
   }
 }
 

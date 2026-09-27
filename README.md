@@ -56,6 +56,7 @@ Bật RAG:
 
 1. Trong LM Studio: tải + load một model embedding, ví dụ
    `text-embedding-nomic-embed-text-v1.5`.
+   *(Dùng Bionic thì bỏ qua bước này — model đã có sẵn.)*
 2. Sửa `.env`:
 
    ```dotenv
@@ -66,6 +67,7 @@ Bật RAG:
 3. Nạp lại toàn bộ kiến thức RAG:
 
    ```bash
+   npm run migrate
    node -e "import('./src/rag/indexer.js').then(m => m.reindexAll())"
    ```
 
@@ -97,6 +99,27 @@ Cách xử lý, theo thứ tự nên thử:
 
 > Model phải **Load** trong LM Studio, không chỉ **Download**. Chỉ Download thì
 > server vẫn trả lỗi. Chạy `0-Cai-Dat-LM-Studio-Model.bat` → mục `[2]` để kiểm tra.
+
+### Server AI ở cổng 1234 không nhất thiết là LM Studio
+
+App chỉ cần một server **tương thích API OpenAI** ở `http://localhost:1234/v1`.
+Đó có thể là LM Studio, hoặc **Bionic** (`Bionic.exe`) — cùng đường dẫn, cùng
+tên model. Mọi file `.bat` đều chỉ kiểm tra `GET /v1/models` nên chạy được với
+cả hai.
+
+Nếu bạn dùng Bionic, máy đã có sẵn model embedding
+`text-embedding-nomic-embed-text-v1.5` → bật RAG bằng cách điền đúng tên, **không
+cần tải gì thêm**.
+
+### Model nói Markdown, Telegram không hiểu
+
+Model hay trả lời kiểu `**Tồn kho:** 150 cái`. App đã tự chuyển:
+
+* `**in đậm**` → chữ đậm
+* `` `code` `` → chữ monospace
+* Bảng Markdown → mỗi dòng một hàng, ngăn cách bằng `·` (Telegram không vẽ bảng)
+
+Cùng cơ chế áp dụng cho khung chat AI trong trang Admin.
 
 ## Cấu hình Telegram (không cần domain, không cần ngrok)
 

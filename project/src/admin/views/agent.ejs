@@ -27,10 +27,19 @@
     overflow-y: auto;
     scrollbar-width: thin;
   }
+  /* Two rows, not one flex line. With the badge, the timestamp and the delete
+     button sharing a single row, the nowrap timestamp ate the whole sidebar and
+     the title collapsed to a bare "S…". The title now gets a full-width row of
+     its own and the metadata drops underneath, so only genuinely long titles
+     ellipsise. */
   .session-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'title badge'
+      'time  del';
     align-items: center;
-    gap: 8px;
+    gap: 2px 8px;
     padding: 7px 8px;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -41,7 +50,7 @@
   .session-item:hover { background: var(--surface-2); }
   .session-item.active { border-color: var(--primary); background: var(--primary-soft); }
   .session-title {
-    flex: 1;
+    grid-area: title;
     min-width: 0;
     background: none;
     border: none;
@@ -56,11 +65,34 @@
     font-weight: 500;
     color: var(--text);
   }
-  .session-time { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .session-time {
+    grid-area: time;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11.5px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .session-del {
+    grid-area: del;
+    align-self: center;
+    justify-self: end;
+    margin: 0;
+    padding: 0;
+    width: 22px;
+    height: 22px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+  }
   /* Was referenced by both the server render and renderSessions() but had no rule
      anywhere in the app, so the message counter rendered as bare text. */
   .badge-count {
-    flex: 0 0 auto;
+    grid-area: badge;
+    justify-self: end;
     min-width: 22px;
     padding: 0 7px;
     border-radius: var(--radius-pill);
@@ -181,18 +213,78 @@
     alertEl.style.display = msg ? 'block' : 'none';
   }
 
-  // All rendering uses textContent — never innerHTML — so user/AI text is escaped.
+  // The model writes Markdown by habit, so a reply arrives full of literal
+  // `**bold**` markers. Render the few markers we support as real elements.
+  //
+  // XSS safety: every text fragment goes in through textContent and the only
+  // elements created are the three tags in TAGS. Nothing from the model is ever
+  // parsed as HTML, so innerHTML stays out of this file entirely.
+  var TAGS = { b: 'strong', i: 'em', code: 'code' };
+  var INLINE = /(\*\*([^*]+)\*\*|`([^`]+)`|(^|[\s(])\*([^*\n]+)\*(?=$|[\s).,!?:;]))/g;
+
+  function inlineNodes(text, sink) {
+    var last = 0;
+    var m;
+    INLINE.lastIndex = 0;
+    while ((m = INLINE.exec(text)) !== null) {
+      if (m.index > last) sink.push(document.createTextNode(text.slice(last, m.index)));
+      if (m[2] !== undefined) {
+        var strong = document.createElement(TAGS.b);
+        strong.textContent = m[2];
+        sink.push(strong);
+      } else if (m[3] !== undefined) {
+        var code = document.createElement(TAGS.code);
+        code.textContent = m[3];
+        sink.push(code);
+      } else if (m[5] !== undefined) {
+        if (m[4]) sink.push(document.createTextNode(m[4]));
+        var em = document.createElement(TAGS.i);
+        em.textContent = m[5];
+        sink.push(em);
+      }
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) sink.push(document.createTextNode(text.slice(last)));
+    return sink;
+  }
+
+  // Markdown tables have no HTML equivalent worth shipping; flatten each row
+  // into a single readable line instead of leaving pipes on screen.
+  function fillBubble(div, prefix, text) {
+    var lines = String(text).split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var isPipeHeavy = (line.match(/\|/g) || []).length >= 2;
+      if (i > 0) div.appendChild(document.createElement('br'));
+      if (isPipeHeavy && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(line)) continue;
+      if (i === 0 && prefix) div.appendChild(document.createTextNode(prefix));
+      if (isPipeHeavy) {
+        var cells = line.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|');
+        var kept = [];
+        for (var c = 0; c < cells.length; c++) {
+          var v = cells[c].trim();
+          if (v !== '') kept.push(v);
+        }
+        inlineNodes(kept.join('  ·  '), []).forEach(function (n) { div.appendChild(n); });
+      } else {
+        inlineNodes(line, []).forEach(function (n) { div.appendChild(n); });
+      }
+    }
+  }
+
+  // All rendering uses textContent / createElement — never innerHTML — so
+  // user/AI text can never be parsed as HTML.
   function bubble(role, text) {
     var div = document.createElement('div');
     if (role === 'user') {
       div.className = 'msg-user';
-      div.textContent = 'Bạn: ' + text;
+      fillBubble(div, 'Bạn: ', text);
     } else if (role === 'error') {
       div.className = 'msg-error';
-      div.textContent = text;
+      fillBubble(div, '', text);
     } else {
       div.className = 'msg-admin';
-      div.textContent = 'Trợ lý: ' + text;
+      fillBubble(div, 'Trợ lý: ', text);
     }
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
@@ -228,9 +320,10 @@
 
       var del = document.createElement('button');
       del.type = 'button';
-      del.className = 'btn btn-small btn-danger';
+      del.className = 'btn btn-small btn-danger session-del';
       del.textContent = '×';
       del.title = 'Xóa phiên chat';
+      del.setAttribute('aria-label', 'Xóa phiên chat');
       del.addEventListener('click', function (e) {
         e.stopPropagation();
         deleteSession(s.id);
